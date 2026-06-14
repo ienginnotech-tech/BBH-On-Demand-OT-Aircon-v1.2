@@ -924,27 +924,45 @@ let APPS_SCRIPT_URL = localStorage.getItem('bbh_api_url') || '';
 let USE_LIVE_API = APPS_SCRIPT_URL !== '';
 
 // ---- API Layer (replaces fetchSheet) ----
+// ---- Unified API via GET (avoids CORS preflight) ----
 async function apiGET(params) {
   if (!USE_LIVE_API) return null;
   try {
     const qs = new URLSearchParams(params).toString();
-    const r = await fetch(APPS_SCRIPT_URL + '?' + qs, {method:'GET'});
-    const d = await r.json();
-    return d.success ? d : null;
-  } catch(e) { console.warn('API GET failed:', e); return null; }
-}
-
-async function apiPOST(body) {
-  if (!USE_LIVE_API) return null;
-  try {
-    const r = await fetch(APPS_SCRIPT_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body)
+    const r = await fetch(APPS_SCRIPT_URL + '?' + qs, {
+      method: 'GET',
+      redirect: 'follow'
     });
     const d = await r.json();
     return d.success ? d : null;
-  } catch(e) { console.warn('API POST failed:', e); return null; }
+  } catch(e) { console.warn('apiGET failed:', e.message); return null; }
+}
+
+// apiPOST → ส่งผ่าน GET parameter เพื่อหลีกเลี่ยง CORS preflight
+async function apiPOST(body) {
+  if (!USE_LIVE_API) return null;
+  try {
+    const action = body.action;
+    const params = { action };
+    // Pack sub-data as encoded JSON
+    if (body.reqNo)    params.reqNo = body.reqNo;
+    if (body.decision) params.decision = body.decision;
+    if (body.name)     params.name = body.name;
+    if (body.data)     params.data = encodeURIComponent(JSON.stringify(body.data));
+    // For flat objects, encode the whole body as data
+    const flat = {...body};
+    delete flat.action;
+    if (Object.keys(flat).length && !params.data) {
+      params.data = encodeURIComponent(JSON.stringify(flat));
+    }
+    const qs = new URLSearchParams(params).toString();
+    const r = await fetch(APPS_SCRIPT_URL + '?' + qs, {
+      method: 'GET',
+      redirect: 'follow'
+    });
+    const d = await r.json();
+    return d.success ? d : null;
+  } catch(e) { console.warn('apiPOST(via GET) failed:', e.message); return null; }
 }
 
 function setApiUrl(url) {
@@ -1594,7 +1612,7 @@ async function submitEngAction(){
     r['Engineering Name(Open)']=name; r['Working Shift(Open)']=shift;
     r['Engineering work(Open/Cancel)']='Open';
     r['Staff Name']=r['Staff Name']||name;
-    if(USE_LIVE_API) await apiPOST({action:'openAircon', reqNo, date, time, engName:name, shift});
+    if(USE_LIVE_API) await apiPOST({action:'openAircon', data:{reqNo, date, time, engName:name, shift}});
   } else if(action==='Cancel'){
     r['Engineering work(Open/Cancel)']='Cancel';
   } else if(action==='Close'){
@@ -1605,7 +1623,7 @@ async function submitEngAction(){
       const diff=(timeToMin(time)-timeToMin(r['Open_OT-Air(Time)'])+1440)%1440;
       r['Cal_Actual_Hours']=(diff/60).toFixed(2);
     }
-    if(USE_LIVE_API) await apiPOST({action:'closeAircon', reqNo, date, time, engName:name, shift});
+    if(USE_LIVE_API) await apiPOST({action:'closeAircon', data:{reqNo, date, time, engName:name, shift}});
   }
   renderEngTable(gData.engWork);
   updateEngStats(gData.engWork);
@@ -2292,12 +2310,12 @@ async function testAndSaveApi(){
   res_el.style.borderLeft='3px solid #D97706';
   res_el.textContent='⏳ กำลังทดสอบการเชื่อมต่อ...';
   try {
-    const r = await fetch(url+'?action=readAll', {method:'GET'});
+    const r = await fetch(url+'?action=ping', {method:'GET', redirect:'follow'});
     const d = await r.json();
     if(d.success){
       res_el.style.background='#ECFDF5';
       res_el.style.borderLeft='3px solid #0E9F6E';
-      res_el.textContent='✅ เชื่อมต่อสำเร็จ! พบข้อมูล Rate Code '+d.rates?.length+' รายการ, Tenants '+d.tenants?.length+' รายการ';
+      res_el.textContent='✅ เชื่อมต่อสำเร็จ! ' + (d.message||'API พร้อมใช้งาน') + ' กำลังโหลดข้อมูล...';
       setApiUrl(url);
       setTimeout(()=>closeMod('mod-api-settings'), 1500);
     } else {
