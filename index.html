@@ -694,7 +694,7 @@ tbody tr:hover td{background:var(--surface2)}
                 <option value="">ทุก Building</option><option>BTE</option><option>BTB</option><option>UBCII</option>
               </select>
               <button class="btn btn-p btn-sm" onclick="globalRefresh()">🔄 โหลด</button>
-              <button class="btn btn-sm" style="background:linear-gradient(135deg,#7E3AF2,#1A56DB);color:#fff;font-weight:700" onclick="openMod('mod-cost-report')">💰 Cost Report</button>
+              <button class="btn btn-sm" style="background:linear-gradient(135deg,#7E3AF2,#1A56DB);color:#fff;font-weight:700" onclick="openCostReport()">💰 Cost Report</button>
               <button class="btn btn-o btn-sm" onclick="exportCSV()">⬇ CSV</button>
               <button class="btn btn-o btn-sm" onclick="window.print()">🖨 Print</button>
             </div>
@@ -1430,7 +1430,7 @@ function renderBuildingTable(){
         <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
         <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Name']||'—'}</td>
         <td>${bldTag(r['Building'])}</td>
-        <td><strong>${r['Space']||'—'}</strong></td>
+        <td title="${r['Space']||''}"><strong style="font-size:11px;max-width:120px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Space']||'—'}</strong></td>
         <td style="font-size:11px;white-space:nowrap">${r['Start time']||'—'}–${r['Finish time']||'—'}</td>
         <td>${ack?`<span class="tag t-green">✓ ${ack}</span>`:`<span class="tag t-amber">⏳ รอ</span>`}</td>
         <td>${r['Staff Name']?`<span class="tag t-purple">${r['Staff Name']}</span>`:'—'}</td>
@@ -2360,18 +2360,176 @@ document.addEventListener('DOMContentLoaded',()=>{
 // COST REPORT
 // ============================================================
 let costReportData = [];
+let crCurrentStep = 1;
+let crValidated = false;
+
+function crGoStep(step){
+  document.querySelectorAll('.cr-step').forEach(s=>s.style.display='none');
+  document.getElementById('cr-step-'+step).style.display='block';
+  // Update step indicators
+  document.querySelectorAll('.cr-step-dot').forEach(d=>{
+    const s=parseInt(d.dataset.step);
+    d.classList.remove('active','done');
+    if(s<step) d.classList.add('done');
+    else if(s===step) d.classList.add('active');
+  });
+  crCurrentStep=step;
+  if(step===2) crRenderPrecheck();
+  if(step===3){ renderCostReport(); }
+}
+
+function crValidate(){
+  const bld=v('cr-bld');
+  const wrap=document.getElementById('cr-validate-wrap');
+  const nextBtn=document.getElementById('cr-next-1');
+
+  // Filter data by building
+  let data=filterByBuilding(gData.csReport);
+  if(bld) data=data.filter(r=>r['Building']===bld);
+
+  let issues=[], warnings=[], ok=0;
+
+  data.forEach(r=>{
+    const no=r['OT-AIR Work Request No.']||'—';
+    const code=r['Code OT Air']||r['Code OT Air_Fee']||'';
+    const area=parseFloat(r['Area']||'0')||0;
+    const openT=r['Open_OT-Air(Time)']||'';
+    const closeT=r['Close_OT-Air(Time)']||'';
+    const mgr=r['Manager Consider(Approved/Waiting/Reject)']||'';
+
+    if(!code) issues.push(`❌ <strong>${no}</strong> — ไม่มี Rate Code`);
+    else if(!allRateCodes.find(rc=>rc['Code OT Air']===code))
+      issues.push(`❌ <strong>${no}</strong> — Rate Code "${code}" ไม่พบในระบบ`);
+    if(!openT||!closeT) warnings.push(`⚠️ <strong>${no}</strong> — เวลาเปิด/ปิดไม่ครบ`);
+    if(area===0) warnings.push(`⚠️ <strong>${no}</strong> — พื้นที่ 0 m² (ตรวจสอบ Tenant list)`);
+    if(mgr!=='Approved') warnings.push(`⚠️ <strong>${no}</strong> — ยังไม่ได้ Manager Approve`);
+    if(!issues.length&&openT&&closeT) ok++;
+  });
+
+  let html2=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+    <div style="text-align:center;padding:8px;background:rgba(63,185,80,.1);border-radius:8px;border:1px solid rgba(63,185,80,.2)">
+      <div style="font-size:20px;font-weight:800;color:var(--green)">${data.length}</div>
+      <div style="font-size:10px;color:var(--text2)">รายการทั้งหมด</div>
+    </div>
+    <div style="text-align:center;padding:8px;background:${issues.length?'rgba(248,81,73,.1)':'rgba(63,185,80,.1)'};border-radius:8px;border:1px solid ${issues.length?'rgba(248,81,73,.2)':'rgba(63,185,80,.2)'}">
+      <div style="font-size:20px;font-weight:800;color:${issues.length?'var(--rose)':'var(--green)'}">
+        ${issues.length?issues.length:'✓'}</div>
+      <div style="font-size:10px;color:var(--text2)">ข้อผิดพลาด</div>
+    </div>
+    <div style="text-align:center;padding:8px;background:rgba(210,153,34,.1);border-radius:8px;border:1px solid rgba(210,153,34,.2)">
+      <div style="font-size:20px;font-weight:800;color:var(--amber)">${warnings.length}</div>
+      <div style="font-size:10px;color:var(--text2)">คำเตือน</div>
+    </div>
+  </div>`;
+
+  if(issues.length){
+    html2+=`<div style="border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px">
+      <div style="font-weight:700;color:var(--rose);margin-bottom:6px">❌ พบข้อผิดพลาด — ต้องแก้ไขก่อนดำเนินการ</div>
+      ${issues.map(i=>`<div style="color:var(--text2);padding:2px 0">${i}</div>`).join('')}
+    </div>`;
+  }
+  if(warnings.length){
+    html2+=`<div style="border:1px solid rgba(210,153,34,.3);border-radius:8px;padding:10px;font-size:12px">
+      <div style="font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ คำเตือน</div>
+      ${warnings.map(w=>`<div style="color:var(--text2);padding:2px 0">${w}</div>`).join('')}
+    </div>`;
+  }
+  if(!issues.length && !warnings.length){
+    html2+=`<div style="text-align:center;padding:14px;color:var(--green);font-size:13px;font-weight:700">
+      ✅ ข้อมูลครบถ้วน พร้อมคำนวณ
+    </div>`;
+  }
+
+  wrap.innerHTML=html2;
+  crValidated=!issues.length;
+  nextBtn.disabled=issues.length>0;
+  if(!issues.length) nextBtn.style.opacity='1';
+}
+
+function crRenderPrecheck(){
+  const bld=v('cr-bld');
+  let data=filterByBuilding(gData.csReport);
+  if(bld) data=data.filter(r=>r['Building']===bld);
+
+  const warnings=[];
+  const rows=data.map(r=>{
+    const code=r['Code OT Air']||r['Code OT Air_Fee']||'';
+    const rateObj=allRateCodes.find(rc=>rc['Code OT Air']===code)||{};
+    const area=parseFloat(r['Area']||'0')||0;
+    const openT=r['Open_OT-Air(Time)']||r['Start time']||'';
+    const closeT=r['Close_OT-Air(Time)']||r['Finish time']||'';
+    const diffMin=(timeToMin(closeT)-timeToMin(openT)+1440)%1440;
+    const hrs=(diffMin/60).toFixed(2);
+    const rArea=parseFloat(rateObj['Charge per Area
+(THB/M2)']||rateObj['Charge per Area(THB/M2)']||'0')||0;
+    const rHour=parseFloat(rateObj['Addtional charge
+(THB/Hour)']||rateObj['Addtional charge(THB/Hour)']||'0')||0;
+    const minChg=parseFloat(rateObj['Minimum charge(THB)']||'0')||0;
+
+    const hasIssue=!code||area===0||!openT||!closeT;
+    if(hasIssue) warnings.push(r['OT-AIR Work Request No.']);
+
+    return `<tr style="${hasIssue?'background:rgba(248,81,73,.06)':''}">
+      <td><span style="font-size:10px;color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</span></td>
+      <td>${bldTag(r['Building'])}</td>
+      <td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Name']||'—'}</td>
+      <td><strong>${r['Space']||'—'}</strong></td>
+      <td style="font-size:9px;color:${code?'var(--accent)':'var(--rose)'}">${code||'❌ ไม่มี'}</td>
+      <td style="${!openT||!closeT?'color:var(--rose)':''}">${openT||'❌'}–${closeT||'❌'}</td>
+      <td><strong>${hrs}</strong> ชม.</td>
+      <td style="${area===0?'color:var(--rose)':''}">${area||'❌'} m²</td>
+      <td style="font-size:10px">${rArea>0?'฿'+rArea+'/m²':rHour>0?'฿'+rHour+'/hr':minChg>0?'Fix ฿'+minChg:'—'}</td>
+      <td>${hasIssue?'<span style="color:var(--rose);font-size:11px">⚠️ ตรวจสอบ</span>':'<span style="color:var(--green);font-size:11px">✓ พร้อม</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  const warnEl=document.getElementById('cr-warnings');
+  if(warnings.length){
+    warnEl.style.display='block';
+    warnEl.innerHTML=`<strong style="color:var(--amber)">⚠️ พบ ${warnings.length} รายการที่ต้องตรวจสอบ:</strong><br>
+      ${warnings.join(', ')}<br>
+      <span style="font-size:11px;color:var(--text3)">แก้ไข Rate Code และพื้นที่ได้จากหน้า Building และ Database</span>`;
+  } else {
+    warnEl.style.display='none';
+  }
+
+  document.getElementById('cr-precheck-wrap').innerHTML=`<table>
+    <thead><tr><th>เลขที่</th><th>Bld</th><th>Tenant</th><th>Space</th>
+    <th>Rate Code</th><th>เปิด–ปิด</th><th>ชั่วโมง</th><th>พื้นที่</th><th>อัตรา</th><th>สถานะ</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+let costReportData = [];
+
+function openCostReport(){
+  crGoStep(1);
+  // Auto-set batch name
+  const now=new Date();
+  const mn=String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('cr-batch').value=now.getFullYear()+'_'+mn+'_OT_Air';
+  document.getElementById('cr-period').value=now.toLocaleString('th-TH',{month:'long',year:'numeric'});
+  document.getElementById('cr-validate-wrap').innerHTML='<div style="font-size:12px;color:var(--text3)">กด "ตรวจสอบ" เพื่อเริ่มตรวจสอบความถูกต้อง</div>';
+  document.getElementById('cr-next-1').disabled=true;
+  openMod('mod-cost-report');
+}
 
 function calcCost(r) {
   const codeKey = r['Code OT Air'] || r['Code OT Air_Fee'] || '';
   const rate = allRateCodes.find(rc => rc['Code OT Air'] === codeKey) || {};
+  if(!codeKey) console.warn('No Code OT Air for', r['OT-AIR Work Request No.']);
+  if(codeKey && !rate['Code OT Air']) console.warn('Rate Code not found:', codeKey, 'Available:', allRateCodes.length);
   const openT  = r['Open_OT-Air(Time)']  || r['Start time']  || '';
   const closeT = r['Close_OT-Air(Time)'] || r['Finish time'] || '';
   const diffMin = (timeToMin(closeT) - timeToMin(openT) + 1440) % 1440;
   const hours = diffMin / 60;
   const area  = parseFloat(r['Area'] || '0') || 0;
-  const rArea  = parseFloat(rate['Charge per Area\n(THB/M2)']     || rate['Charge per Area(THB/M2)']    || '0') || 0;
-  const rHour  = parseFloat(rate['Addtional charge\n(THB/Hour)']  || rate['Addtional charge(THB/Hour)'] || '0') || 0;
-  const rMonth = parseFloat(rate['Addtional charge\n(THB/Month)'] || rate['Addtional charge(THB/Month)']|| '0') || 0;
+  // Rate keys อาจมี newline (
+) หรือไม่มีก็ได้ ตรวจทั้ง 2 แบบ
+  const getRate = (r, k1, k2) => parseFloat(r[k1] || r[k2] || r[k1.replace('\n','')] || '0') || 0;
+  const rArea  = getRate(rate, 'Charge per Area\n(THB/M2)',      'Charge per Area(THB/M2)');
+  const rHour  = getRate(rate, 'Addtional charge\n(THB/Hour)',   'Addtional charge(THB/Hour)');
+  const rMonth = getRate(rate, 'Addtional charge\n(THB/Month)',  'Addtional charge(THB/Month)');
   const rMin   = parseFloat(rate['Minimum charge(THB)'] || '0') || 0;
   const areaCharge = rArea  > 0 && area > 0 ? rArea * area * hours : 0;
   const hourCharge = rHour  > 0 ? rHour * hours : 0;
@@ -2398,7 +2556,7 @@ function calcCost(r) {
 }
 
 function renderCostReport() {
-  const bld = document.getElementById('cr-filter-bld') ? document.getElementById('cr-filter-bld').value : '';
+  const bld = v('cr-bld') || (document.getElementById('cr-filter-bld') ? document.getElementById('cr-filter-bld').value : '');
   let data = filterByBuilding(gData.csReport);
   if (bld) data = data.filter(r => r['Building'] === bld);
   costReportData = data.map(r => calcCost(r));
@@ -2430,7 +2588,7 @@ function renderCostReport() {
     <tbody>${costReportData.map(r => `<tr>
       <td style="font-size:10px;color:var(--accent)">${r.reqNo}</td>
       <td>${bldTag(r.building)}</td>
-      <td><strong>${r.space}</strong></td>
+      <td><strong style="font-size:11px">${r.space.length>10?r.space.substring(0,10)+'…':r.space}</strong></td>
       <td style="font-size:10px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.tenant}</td>
       <td style="font-size:9px;color:var(--accent)">${r.codeOtAir.replace('XXXCH_OT_AIR_','')}</td>
       <td style="color:var(--green)">${r.openTime||'—'}</td>
@@ -2453,12 +2611,19 @@ async function pushCostToSheet() {
   btn.textContent = '⏳ กำลังบันทึก...'; btn.disabled = true;
   let ok = 0, fail = 0;
   for (const row of costReportData) {
-    const r = await apiGET({ action:'updateCostReport', data: encodeURIComponent(JSON.stringify({
-      reqNo: row.reqNo, hours: row.hours, area: row.area,
-      areaCharge: row.areaCharge, hourCharge: row.hourCharge,
-      total: row.total, minCharge: row.minCharge, codeOtAir: row.codeOtAir,
-    }))});
-    if (r && r.updated) ok++; else fail++;
+    const payload = encodeURIComponent(JSON.stringify({
+      reqNo:      row.reqNo,
+      hours:      row.hours,
+      area:       String(row.area),
+      areaCharge: row.areaCharge,
+      hourCharge: row.hourCharge,
+      total:      row.total,
+      minCharge:  String(row.minCharge),
+      codeOtAir:  row.codeOtAir,
+    }));
+    const r = await apiGET({ action: 'updateCostReport', data: payload });
+    if (r && r.updated) ok++;
+    else { fail++; console.warn('Cost push failed for', row.reqNo, r); }
   }
   btn.textContent = '📊 บันทึก Cost ลง Google Sheet'; btn.disabled = false;
   res.style.display = 'block';
@@ -2487,43 +2652,116 @@ function exportCostCSV() {
 </script>
 
 
-<!-- MODAL: Cost Report Calculator & Push to Sheet -->
+
+<!-- MODAL: Cost Report Step-by-Step -->
 <div class="moverlay" id="mod-cost-report">
-  <div class="mbox" style="max-width:700px">
-    <div class="mtitle">💰 Cost Report — คำนวณและบันทึกลง Google Sheet
-      <button class="mclose" onclick="closeMod('mod-cost-report')">✕</button>
+  <div class="mbox" style="max-width:780px">
+    <div class="mtitle">
+      <span>💰 Cost Report</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <!-- Step indicators -->
+        <div style="display:flex;gap:6px" id="cr-steps-indicator">
+          <span class="cr-step-dot active" data-step="1">1</span>
+          <span style="color:var(--text3);font-size:12px">›</span>
+          <span class="cr-step-dot" data-step="2">2</span>
+          <span style="color:var(--text3);font-size:12px">›</span>
+          <span class="cr-step-dot" data-step="3">3</span>
+        </div>
+        <button class="mclose" onclick="closeMod('mod-cost-report')">✕</button>
+      </div>
     </div>
 
-    <!-- Filter -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      <select class="finput" style="width:auto" id="cr-filter-bld" onchange="renderCostReport()">
-        <option value="">ทุก Building</option><option>BTE</option><option>BTB</option><option>UBCII</option>
-      </select>
-      <button class="btn btn-o btn-sm" onclick="renderCostReport()">🔄 คำนวณใหม่</button>
+    <!-- STEP 1: เลือกและตรวจสอบ -->
+    <div class="cr-step" id="cr-step-1">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">ขั้นตอนที่ 1 — เลือก Batch และตรวจสอบข้อมูล</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:14px">เลือก Building และ Period ที่ต้องการ แล้วตรวจสอบว่าข้อมูลครบถ้วนก่อนคำนวณ</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="fg">
+          <label class="flabel">Building</label>
+          <select class="fselect" id="cr-bld">
+            <option value="">ทุก Building</option>
+            <option>BTE</option><option>BTB</option><option>UBCII</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flabel">Batch Name</label>
+          <input class="finput" id="cr-batch" placeholder="เช่น 2026_06_OT_Air">
+        </div>
+        <div class="fg">
+          <label class="flabel">Period</label>
+          <input class="finput" id="cr-period" placeholder="เช่น June 2026">
+        </div>
+      </div>
+
+      <!-- ตรวจสอบข้อมูล -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px">🔍 ผลการตรวจสอบข้อมูล</div>
+        <div id="cr-validate-wrap">
+          <div style="font-size:12px;color:var(--text3)">กด "ตรวจสอบ" เพื่อเริ่มตรวจสอบความถูกต้อง</div>
+        </div>
+      </div>
+
+      <div class="frow" style="margin-top:0">
+        <button class="btn btn-o btn-sm" onclick="crValidate()">🔍 ตรวจสอบ</button>
+        <button class="btn btn-p" id="cr-next-1" onclick="crGoStep(2)" disabled>ถัดไป → ตรวจสอบรายละเอียด</button>
+      </div>
     </div>
 
-    <!-- Summary -->
-    <div id="cr-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px"></div>
+    <!-- STEP 2: ตรวจสอบรายการ -->
+    <div class="cr-step" id="cr-step-2" style="display:none">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">ขั้นตอนที่ 2 — ตรวจสอบรายการก่อนคำนวณ</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:12px">ตรวจสอบว่า Rate Code และพื้นที่ถูกต้องทุกรายการ แก้ไขได้จากหน้า Building ก่อนกดคำนวณ</div>
 
-    <!-- Table -->
-    <div id="cr-table" style="max-height:340px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)"></div>
+      <!-- Pre-calc check table -->
+      <div id="cr-precheck-wrap" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:12px"></div>
 
-    <!-- Note -->
-    <div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:11px;color:var(--text2);margin-top:12px;border-left:3px solid var(--amber)">
-      <strong style="color:var(--text)">สูตรคำนวณ:</strong> ดึง Rate Code จาก Sheet → คำนวณ
-      ชั่วโมงจริง × อัตรา × พื้นที่ → เปรียบเทียบกับขั้นต่ำ → ใช้ค่าที่มากกว่า
+      <!-- Warning summary -->
+      <div id="cr-warnings" style="display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px"></div>
+
+      <div class="frow" style="margin-top:0">
+        <button class="btn btn-o btn-sm" onclick="crGoStep(1)">← กลับ</button>
+        <button class="btn btn-p" onclick="crGoStep(3)">คำนวณ → ดูผลลัพธ์</button>
+      </div>
     </div>
 
-    <div class="frow" style="margin-top:14px">
-      <button class="btn btn-p" id="cr-push-btn" onclick="pushCostToSheet()">
-        📊 บันทึก Cost ลง Google Sheet
-      </button>
-      <button class="btn btn-o btn-sm" onclick="exportCostCSV()">⬇ Export CSV</button>
-      <button class="btn btn-o" onclick="closeMod('mod-cost-report')">ปิด</button>
+    <!-- STEP 3: ผลการคำนวณ -->
+    <div class="cr-step" id="cr-step-3" style="display:none">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">ขั้นตอนที่ 3 — ผลการคำนวณและบันทึก</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:12px">ตรวจสอบยอดสุดท้าย แล้วกดบันทึกลง Google Sheet</div>
+
+      <!-- Summary stats -->
+      <div id="cr-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"></div>
+
+      <!-- Result table -->
+      <div id="cr-table" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:12px"></div>
+
+      <!-- Formula note -->
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;font-size:11px;color:var(--text2);border-left:3px solid var(--amber);margin-bottom:12px">
+        <strong style="color:var(--text)">สูตร:</strong>
+        ชั่วโมงจริง × อัตรา × พื้นที่ → เปรียบเทียบกับขั้นต่ำ → ใช้ค่าที่มากกว่า
+        | ถ้า Monthly Rate → ใช้อัตรารายเดือนแทน
+      </div>
+
+      <div class="frow" style="margin-top:0">
+        <button class="btn btn-o btn-sm" onclick="crGoStep(2)">← กลับแก้ไข</button>
+        <button class="btn btn-p" id="cr-push-btn" onclick="pushCostToSheet()">📊 บันทึก Cost ลง Google Sheet</button>
+        <button class="btn btn-o btn-sm" onclick="exportCostCSV()">⬇ CSV</button>
+      </div>
+      <div id="cr-push-result" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:12px;border:1px solid var(--border)"></div>
     </div>
-    <div id="cr-push-result" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:12px;border:1px solid var(--border)"></div>
+
   </div>
 </div>
+
+<style>
+.cr-step-dot{
+  width:24px;height:24px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border2);
+  color:var(--text2);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+}
+.cr-step-dot.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.cr-step-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+</style>
 
 </body>
 </html>
