@@ -1384,6 +1384,11 @@ function updateAllStats(){
 // RENDER TABLES
 // ============================================================
 function renderTenantTable(){
+  // Deduplicate tenantReqs
+  const seenT = new Set();
+  gData.tenantReqs = gData.tenantReqs.filter(r=>{
+    const no = r['OT-AIR Work Request No.']; if(seenT.has(no)) return false; seenT.add(no); return true;
+  });
   const data = filterByBuilding(gData.tenantReqs);
   // Reset filter buttons to "ทั้งหมด"
   document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
@@ -1393,6 +1398,14 @@ function renderTenantTable(){
 }
 
 function renderBuildingTable(){
+  // Deduplicate: ถ้ามี reqNo ซ้ำ ให้เอาแถวสุดท้าย (ล่าสุด)
+  const seen = new Set();
+  const deduped = [];
+  for(let i = gData.buildingAssigns.length - 1; i >= 0; i--){
+    const no = gData.buildingAssigns[i]['OT-AIR Work Request No.'];
+    if(!seen.has(no)){ seen.add(no); deduped.unshift(gData.buildingAssigns[i]); }
+  }
+  gData.buildingAssigns = deduped;
   const data = filterByBuilding(gData.buildingAssigns);
   const wrap = document.getElementById('building-table-wrap');
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีข้อมูล');return;}
@@ -1468,6 +1481,14 @@ function renderManagerTable(){
 }
 
 function renderEngTable(){
+  // Deduplicate engWork
+  const seenE = new Set();
+  const dedupedE = [];
+  for(let i = gData.engWork.length - 1; i >= 0; i--){
+    const no = gData.engWork[i]['OT-AIR Work Request No.'];
+    if(!seenE.has(no)){ seenE.add(no); dedupedE.unshift(gData.engWork[i]); }
+  }
+  gData.engWork = dedupedE;
   const data = filterByBuilding(gData.engWork);
   const wrap = document.getElementById('eng-table-wrap');
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีงาน OT');return;}
@@ -1685,11 +1706,17 @@ async function submitEngAction(){
 // ============================================================
 // ACTIONS: TENANT REQUEST
 // ============================================================
+let _submitting = false; // lock flag
 async function submitRequest(){
+  if(_submitting){ toast('⚠️ กำลังบันทึกอยู่ กรุณารอสักครู่...'); return; }
   const bld=v('nr-bld'),unit=v('nr-unit'),type=v('nr-type'),
         date=v('nr-date'),start=v('nr-start'),end=v('nr-end'),
         name=v('nr-name'),tel=v('nr-tel'),remark=v('nr-remark');
   if(!bld||!unit||!date||!start||!end||!name){toast('⚠️ กรุณากรอกข้อมูลให้ครบ');return;}
+  // Lock ป้องกัน double submit
+  _submitting = true;
+  const submitBtn = document.querySelector('#mod-new-req .btn-p');
+  if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='⏳ กำลังบันทึก...'; }
   const tenantInfo=EXCEL_DATA.tenantsCurrent.find(t=>t['Building']===bld&&t['Space']===unit)||{};
   if(USE_LIVE_API){
     toast('⏳ กำลังบันทึก...');
@@ -1701,15 +1728,19 @@ async function submitRequest(){
     }))});
     if(res){
       closeMod('mod-new-req');
+      _submitting = false;
+      if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='📤 ส่งคำขอ'; }
       toast('✅ บันทึก '+res.reqNo+' ลง Google Sheets — กำลังโหลดข้อมูลใหม่...');
-      // Clear local cache แล้วโหลดจาก Sheet ใหม่ทั้งหมด เพื่อป้องกันข้อมูลซ้อน
       setTimeout(async ()=>{
+        gData={tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[]};
         await loadAllLive();
         renderAllModules();
         toast('✅ อัปเดตข้อมูลเรียบร้อย');
       }, 1500);
       return;
     }
+    _submitting = false;
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='📤 ส่งคำขอ'; }
   }
   // Fallback: Local mode (ไม่มี API)
   const reqNo='OT_AIR'+Date.now().toString().slice(-6);
@@ -1720,6 +1751,8 @@ async function submitRequest(){
   const engRow={...newRow};
   gData.buildingAssigns.push(buildRow);
   gData.engWork.push(engRow);
+  _submitting = false;
+  if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='📤 ส่งคำขอ'; }
   renderAllModules(); closeMod('mod-new-req'); toast('✅ บันทึก '+reqNo+' (Local — ไม่ได้ Sync กับ Sheet)');
 }
 
