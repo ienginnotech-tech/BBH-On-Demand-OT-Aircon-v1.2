@@ -1278,19 +1278,20 @@ function loadFromEmbedded(){
 async function loadAllLive(){
   const [master,ops] = await Promise.all([apiGET({action:'readAll'}),apiGET({action:'readOps'})]);
   if(master){
-    dbData.staff=master.staff||EXCEL_DATA.staff;
-    dbData.types=master.types||EXCEL_DATA.types;
-    dbData.levels=master.levels||EXCEL_DATA.levels;
-    dbData.rates=master.rates||EXCEL_DATA.rates;
-    dbData.buildings=master.buildings||EXCEL_DATA.buildings;
-    dbData.tenants=master.tenants||EXCEL_DATA.tenants;
-    allRateCodes=dbData.rates;
+    dbData.staff    = master.staff     || EXCEL_DATA.staff;
+    dbData.types    = master.types     || EXCEL_DATA.types;
+    dbData.levels   = master.levels    || EXCEL_DATA.levels;
+    dbData.rates    = master.rates     || EXCEL_DATA.rates;
+    dbData.buildings= master.buildings || EXCEL_DATA.buildings;
+    dbData.tenants  = master.tenants   || EXCEL_DATA.tenants;
+    allRateCodes    = dbData.rates;
   }
   if(ops){
-    gData.tenantReqs=ops.tenantReqs||EXCEL_DATA.tenantReqs;
-    gData.buildingAssigns=ops.buildingAssigns||EXCEL_DATA.buildingAssigns;
-    gData.engWork=ops.engWork||EXCEL_DATA.engWork;
-    gData.csReport=ops.csReport||EXCEL_DATA.csReport;
+    // Replace entirely — do NOT merge with existing gData
+    gData.tenantReqs      = ops.tenantReqs      || [];
+    gData.buildingAssigns = ops.buildingAssigns  || [];
+    gData.engWork         = ops.engWork          || [];
+    gData.csReport        = ops.csReport         || [];
   }
 }
 
@@ -1361,21 +1362,11 @@ function updateAllStats(){
 // ============================================================
 function renderTenantTable(){
   const data = filterByBuilding(gData.tenantReqs);
-  const wrap = document.getElementById('tenant-table-wrap');
-  if(!data.length){wrap.innerHTML=emptyState('ยังไม่มีคำขอ OT Air');return;}
-  wrap.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>เลขที่</th><th>วันที่</th><th>ประเภท</th><th>บริษัท</th><th>Space</th><th>เวลา</th><th>สถานะ</th><th></th></tr></thead>
-    <tbody>${data.map((r,i)=>`<tr>
-      <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
-      <td style="color:var(--text2);font-size:11px">${fmtDate(r['Date'])}</td>
-      <td>${typeTag(r['Type_OT-AIR'])}</td>
-      <td style="font-size:12px">${r['Name']||'—'}</td>
-      <td><strong>${r['Space']||'—'}</strong></td>
-      <td style="font-size:12px;white-space:nowrap">${r['Start time']||'—'} – ${r['Finish time']||'—'}</td>
-      <td>${statusTag(getStatus(r))}</td>
-      <td><button class="btn btn-o btn-sm" onclick="showDetail(${i},'tenant')">ดู</button></td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
+  // Reset filter buttons to "ทั้งหมด"
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  const allBtn=document.querySelector('.fbtn');
+  if(allBtn) allBtn.classList.add('active');
+  renderTenantTableData(data);
 }
 
 function renderBuildingTable(){
@@ -1633,18 +1624,43 @@ async function submitRequest(){
       tenantCode:tenantInfo['Code']||tenantInfo['Tenant_Code']||'',
       tenantName:tenantInfo['Name']||'',area:tenantInfo['Area']||'',
     }))});
-    if(res){closeMod('mod-new-req');toast('✅ บันทึก '+res.reqNo+' ลง Google Sheets');setTimeout(()=>globalRefresh(),1500);return;}
+    if(res){
+      closeMod('mod-new-req');
+      toast('✅ บันทึก '+res.reqNo+' ลง Google Sheets — กำลังโหลดข้อมูลใหม่...');
+      // Clear local cache แล้วโหลดจาก Sheet ใหม่ทั้งหมด เพื่อป้องกันข้อมูลซ้อน
+      setTimeout(async ()=>{
+        await loadAllLive();
+        renderAllModules();
+        toast('✅ อัปเดตข้อมูลเรียบร้อย');
+      }, 1500);
+      return;
+    }
   }
+  // Fallback: Local mode (ไม่มี API)
   const reqNo='OT_AIR'+Date.now().toString().slice(-6);
-  gData.tenantReqs.push({'OT-AIR Work Request No.':reqNo,'Date':nowStr(),'Type_OT-AIR':type,'Building':bld,'Space':unit,'Name':tenantInfo['Name']||'','Start time':start,'Finish time':end,'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remark});
-  gData.buildingAssigns.push(gData.tenantReqs[gData.tenantReqs.length-1]);
-  gData.engWork.push(gData.tenantReqs[gData.tenantReqs.length-1]);
-  renderAllModules(); closeMod('mod-new-req'); toast('✅ บันทึก '+reqNo+' (Local)');
+  const newRow={'OT-AIR Work Request No.':reqNo,'Date':nowStr(),'Type_OT-AIR':type,'Building':bld,'Space':unit,'Name':tenantInfo['Name']||'','Start time':start,'Finish time':end,'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remark};
+  gData.tenantReqs.push(newRow);
+  // ใน Local mode เพิ่มใน buildingAssigns และ engWork ด้วย
+  const buildRow={...newRow};
+  const engRow={...newRow};
+  gData.buildingAssigns.push(buildRow);
+  gData.engWork.push(engRow);
+  renderAllModules(); closeMod('mod-new-req'); toast('✅ บันทึก '+reqNo+' (Local — ไม่ได้ Sync กับ Sheet)');
 }
 
 // ============================================================
 // DETAIL MODAL
 // ============================================================
+function showDetailByReqNo(reqNo, type){
+  let arr;
+  if(type==='tenant') arr=gData.tenantReqs;
+  else if(type==='building') arr=gData.buildingAssigns;
+  else arr=gData.engWork;
+  const idx=arr.findIndex(r=>r['OT-AIR Work Request No.']==='reqNo');
+  if(idx>=0) showDetail(idx,type);
+  else toast('⚠️ ไม่พบข้อมูล');
+}
+
 function showDetail(i,type){
   let r;
   if(type==='tenant')r=filterByBuilding(gData.tenantReqs)[i];
@@ -2064,11 +2080,12 @@ async function globalRefresh(){
   const btn=document.getElementById('refresh-btn');
   if(btn){btn.textContent='⏳';btn.disabled=true;}
   showSync(true);
+  // Clear existing data before reload to prevent duplicate
+  gData={tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[]};
   if(USE_LIVE_API) await loadAllLive();
   else loadFromEmbedded();
   renderAllModules();
   showSync(false);
-  document.getElementById('last-sync')||null;
   if(btn){btn.textContent='🔄';btn.disabled=false;}
   toast('✅ รีเฟรชเรียบร้อย');
 }
@@ -2166,7 +2183,40 @@ function bldTag(b){
 
 function emptyState(msg){return`<div style="text-align:center;padding:32px;color:var(--text3);font-size:13px">${msg}</div>`;}
 
-function setF(btn,f){document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function setF(btn,f){
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // Filter tenant table
+  const base = filterByBuilding(gData.tenantReqs);
+  let filtered;
+  if(f==='pending-t'){
+    filtered = base.filter(r=>getStatus(r)==='pending'||getStatus(r)==='acknowledged');
+  } else if(f==='approved-t'){
+    filtered = base.filter(r=>getStatus(r)==='approved');
+  } else {
+    filtered = base; // all
+  }
+  renderTenantTableData(filtered);
+}
+
+function renderTenantTableData(data){
+  const wrap = document.getElementById('tenant-table-wrap');
+  if(!data.length){wrap.innerHTML=emptyState('ไม่พบข้อมูล');return;}
+  wrap.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>เลขที่</th><th>วันที่</th><th>อาคาร</th><th>ประเภท</th><th>บริษัท</th><th>Space</th><th>เวลา</th><th>สถานะ</th><th></th></tr></thead>
+    <tbody>${data.map((r,i)=>`<tr>
+      <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
+      <td style="color:var(--text2);font-size:11px">${fmtDate(r['Date'])}</td>
+      <td>${bldTag(r['Building'])}</td>
+      <td>${typeTag(r['Type_OT-AIR'])}</td>
+      <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Name']||'—'}</td>
+      <td><strong>${r['Space']||'—'}</strong></td>
+      <td style="font-size:12px;white-space:nowrap">${r['Start time']||'—'} – ${r['Finish time']||'—'}</td>
+      <td>${statusTag(getStatus(r))}</td>
+      <td><button class="btn btn-o btn-sm" onclick="showDetailByReqNo('${r['OT-AIR Work Request No.']}','tenant')">ดู</button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
 
 function openMod(id){document.getElementById(id)?.classList.add('open');}
 function closeMod(id){document.getElementById(id)?.classList.remove('open');}
