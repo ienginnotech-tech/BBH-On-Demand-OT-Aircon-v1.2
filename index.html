@@ -970,11 +970,13 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="mtitle">➕ แจ้งขอ OT Air ใหม่ <button class="mclose" onclick="closeMod('mod-new-req')">✕</button></div>
     <div class="form-grid">
       <div class="fg"><label class="flabel">Building</label>
-        <select class="fselect" id="nr-bld" onchange="loadUnits()">
+        <select class="fselect" id="nr-bld" onchange="loadUnits();document.getElementById('nr-tenant-name').value='';">
           <option value="">— เลือก —</option><option>BTE</option><option>BTB</option><option>UBCII</option>
         </select></div>
       <div class="fg"><label class="flabel">Space / Unit</label>
-        <select class="fselect" id="nr-unit"><option value="">— เลือก Building ก่อน —</option></select></div>
+        <select class="fselect" id="nr-unit" onchange="fillTenantInfo()"><option value="">— เลือก Building ก่อน —</option></select></div>
+      <div class="fg full"><label class="flabel">Tenant Name</label>
+        <input class="finput" id="nr-tenant-name" type="text" placeholder="— เลือก Unit ก่อน —" readonly style="color:var(--accent);background:var(--surface2)"></div>
       <div class="fg full"><label class="flabel">ประเภท OT Air</label>
         <select class="fselect" id="nr-type">
           <option>ระบบปรับอากาศ-อากาศลมเย็น</option>
@@ -1712,6 +1714,22 @@ async function submitEngAction(){
 // ACTIONS: TENANT REQUEST
 // ============================================================
 let _submitting=false;
+
+function fillTenantInfo(){
+  const sel=document.getElementById('nr-unit');
+  const opt=sel.options[sel.selectedIndex];
+  const nameEl=document.getElementById('nr-tenant-name');
+  if(opt && opt.dataset.name){
+    nameEl.value=opt.dataset.name;
+  } else {
+    // ค้นหาจาก EXCEL_DATA
+    const bld=v('nr-bld');
+    const space=v('nr-unit');
+    const t=EXCEL_DATA.tenants.find(x=>x['Building']===bld&&x['Space']===space&&x['Name']);
+    nameEl.value=t?t['Name']:'';
+  }
+}
+
 async function submitRequest(){
   if(_submitting){toast('⚠️ กำลังบันทึกอยู่...');return;}
   _submitting=true;
@@ -1721,7 +1739,12 @@ async function submitRequest(){
         date=v('nr-date'),start=v('nr-start'),end=v('nr-end'),
         name=v('nr-name'),tel=v('nr-tel'),remark=v('nr-remark');
   if(!bld||!unit||!date||!start||!end||!name){toast('⚠️ กรุณากรอกข้อมูลให้ครบ');return;}
-  const tenantInfo=EXCEL_DATA.tenantsCurrent.find(t=>t['Building']===bld&&t['Space']===unit)||{};
+  // ดึง Tenant Info จาก dropdown ที่เลือก
+  const sel=document.getElementById('nr-unit');
+  const opt=sel?sel.options[sel.selectedIndex]:null;
+  const tenantInfo=EXCEL_DATA.tenants.find(t=>t['Building']===bld&&t['Space']===unit&&t['Name'])||
+    EXCEL_DATA.tenantsCurrent.find(t=>t['Building']===bld&&t['Space']===unit)||{};
+  const tenantNameDisplay=document.getElementById('nr-tenant-name')?document.getElementById('nr-tenant-name').value:'';
   if(USE_LIVE_API){
     toast('⏳ กำลังบันทึก...');
     const res=await apiGET({action:'submitRequest',data:encodeURIComponent(JSON.stringify({
@@ -2193,12 +2216,20 @@ function showSync(on){
 // ============================================================
 async function loadUnits(){
   const bld=v('nr-bld');
+  if(!bld){ return; }
   const sel=document.getElementById('nr-unit');
-  sel.innerHTML='<option value="">— กำลังโหลด —</option>';
-  const units=EXCEL_DATA.tenantsCurrent.filter(t=>t['Building']===bld);
-  sel.innerHTML='<option value="">— เลือก Unit —</option>'+
-    units.map(u=>`<option value="${u['Space']}">${u['Space']} — ${(u['Name']||'').substring(0,35)} (${u['Area']||'?'} m²)</option>`).join('');
-  if(!units.length){
+  sel.innerHTML='<option value="">— เลือก Unit —</option>';
+  // ใช้ EXCEL_DATA.tenants แทน tenantsCurrent เพื่อให้ได้ทุก Unit
+  const allTenants = EXCEL_DATA.tenants || [];
+  const units = allTenants.filter(t=>
+    t['Building']===bld &&
+    t['Space'] && t['Space'].trim() !== '' &&
+    (t['Status']==='Current' || t['Name'])
+  );
+  if(units.length){
+    sel.innerHTML='<option value="">— เลือก Unit —</option>'+
+      units.map(u=>`<option value="${u['Space']}" data-name="${u['Name']||''}" data-area="${u['Area']||''}" data-code="${u['Code']||''}">${u['Space']}${u['Name']?' — '+(u['Name']||'').substring(0,30):''} (${u['Area']||'?'} m²)</option>`).join('');
+  } else {
     const bldUnits=EXCEL_DATA.buildingsOffice.filter(b=>b['Building Name']===bld);
     sel.innerHTML='<option value="">— เลือก Unit —</option>'+bldUnits.map(u=>`<option value="${u['Unit']}">${u['Unit']} (${u['SQM']} m²)</option>`).join('');
   }
