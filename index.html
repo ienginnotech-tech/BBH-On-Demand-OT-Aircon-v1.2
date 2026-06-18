@@ -444,14 +444,14 @@ tbody tr:hover td{background:var(--surface2)}
     <select class="auth-select" id="login-module">
       <option value="">— เลือก Module —</option>
       <optgroup label="🏢 Tenant">
-        <option value="tenant-BTE">Tenant — BTE (Bangkok Tower East)</option>
-        <option value="tenant-BTB">Tenant — BTB (Bangkok Tower B)</option>
+        <option value="tenant-BTE">Tenant — BTE</option>
+        <option value="tenant-BTB">Tenant — BTB</option>
         <option value="tenant-UBCII">Tenant — UBCII</option>
       </optgroup>
       <optgroup label="🏗️ Building Admin">
-        <option value="building-BTE">Building Admin — BTE</option>
-        <option value="building-BTB">Building Admin — BTB</option>
-        <option value="building-UBCII">Building Admin — UBCII</option>
+        <option value="building-BTE">Building — BTE</option>
+        <option value="building-BTB">Building — BTB</option>
+        <option value="building-UBCII">Building — UBCII</option>
       </optgroup>
 
       <optgroup label="🔧 Engineering">
@@ -460,7 +460,7 @@ tbody tr:hover td{background:var(--surface2)}
         <option value="eng-UBCII">Engineering — UBCII</option>
       </optgroup>
       <optgroup label="📊 CS / Admin">
-        <option value="cs">CS — ทุกอาคาร (Super Admin)</option>
+        <option value="cs">CS — Super Admin</option>
       </optgroup>
     </select>
     <label class="auth-label">Password / Access Key</label>
@@ -2066,7 +2066,7 @@ function renderSettings(){
           <div style="font-size:13px;font-weight:700;margin-bottom:8px">${bldTag(bld)} ${bld}</div>
           <div class="form-grid" style="gap:8px">
             <div class="fg"><label class="flabel">ชื่อเต็ม</label>
-              <input class="finput" style="font-size:12px;padding:7px 10px" id="bld-name-${bld}" value="${bld==='BTE'?'Bangkok Tower East':bld==='BTB'?'Bangkok Tower B':'UBC II'}"></div>
+              <input class="finput" style="font-size:12px;padding:7px 10px" id="bld-name-${bld}" value="${bld==='BTE'?'BTE':bld==='BTB'?'BTB':'UBCII'}"></div>
             <div class="fg"><label class="flabel">จำนวนชั้น</label>
               <input class="finput" style="font-size:12px;padding:7px 10px" type="number" id="bld-floors-${bld}" value="${bld==='UBCII'?26:bld==='BTE'?28:24}"></div>
           </div>
