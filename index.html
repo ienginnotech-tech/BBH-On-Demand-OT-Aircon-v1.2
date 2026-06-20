@@ -595,7 +595,7 @@ tbody tr:hover td{background:var(--surface2)}
           <div class="stats-grid">
             <div class="stat-card"><div class="stat-num" style="color:var(--accent)" id="ts-total">—</div><div class="stat-label">คำขอทั้งหมด</div><div class="stat-sub">เดือนนี้</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--amber)" id="ts-pending">—</div><div class="stat-label">รอดำเนินการ</div><div class="stat-sub">Pending</div></div>
-            <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="ts-approved">—</div><div class="stat-label">อนุมัติแล้ว</div><div class="stat-sub">Approved</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="ts-approved">—</div><div class="stat-label">รับทราบแล้ว</div><div class="stat-sub">Acknowledged</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--text)" id="ts-hours">—</div><div class="stat-label">ชั่วโมงรวม</div><div class="stat-sub">เดือนนี้</div></div>
           </div>
           <div class="card">
@@ -604,7 +604,7 @@ tbody tr:hover td{background:var(--surface2)}
               <div class="filter-bar" style="margin:0;padding:0">
                 <button class="fbtn active" onclick="setF(this,'all-t')">ทั้งหมด</button>
                 <button class="fbtn" onclick="setF(this,'pending-t')">Pending</button>
-                <button class="fbtn" onclick="setF(this,'approved-t')">Approved</button>
+                <button class="fbtn" onclick="setF(this,'approved-t')">Acknowledged</button>
               </div>
             </div>
             <div id="tenant-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
@@ -616,13 +616,13 @@ tbody tr:hover td{background:var(--surface2)}
           <div class="sh">
             <div>
               <div class="sh-title">🏗️ จัดสรร OT งาน</div>
-              <div class="sh-sub">Acknowledge / มอบหมายช่าง / ส่ง Manager</div>
+              <div class="sh-sub">Acknowledge / มอบหมายช่าง / อนุมัติอัตโนมัติ</div>
             </div>
             <button class="btn btn-p" onclick="openMod('mod-assign')">＋ มอบหมายงาน</button>
           </div>
           <div class="stats-grid">
             <div class="stat-card"><div class="stat-num" style="color:var(--rose)" id="bs-new">—</div><div class="stat-label">รอ Acknowledge</div></div>
-            <div class="stat-card"><div class="stat-num" style="color:var(--amber)" id="bs-wait">—</div><div class="stat-label">รอ Manager</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--amber)" id="bs-wait">—</div><div class="stat-label">รอมอบหมายช่าง</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="bs-ok">—</div><div class="stat-label">Approved</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--accent)" id="bs-total">—</div><div class="stat-label">ทั้งหมด</div></div>
           </div>
@@ -989,9 +989,9 @@ tbody tr:hover td{background:var(--surface2)}
           style="color:var(--accent);background:var(--surface2)"></div>
       <div class="fg full"><label class="flabel">ประเภท OT Air</label>
         <select class="fselect" id="nr-type">
-          <option>ระบบปรับอากาศ-อากาศลมเย็น</option>
-          <option>ระบบปรับอากาศ-น้ำเย็นเท่านั้น</option>
-          <option>ระบบปรับอากาศ-น้ำระบายความร้อนเท่านั้น</option>
+          <option>🔵 ระบบปรับอากาศนอกเวลา</option>
+          <option>🔵 ระบบปรับอากาศ-น้ำเย็นเท่านั้น</option>
+          <option>🔵 ระบบปรับอากาศ-น้ำระบายความร้อนเท่านั้น</option>
         </select></div>
       <div class="fg"><label class="flabel">วันที่ต้องการ</label><input class="finput" type="date" id="nr-date"></div>
       <div class="fg"><label class="flabel">เวลาเริ่ม</label><input class="finput" type="time" id="nr-start"></div>
@@ -1014,6 +1014,11 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="fg"><label class="flabel">เลขที่คำขอ</label><select class="fselect" id="as-req"></select></div>
       <div class="fg"><label class="flabel">ช่าง</label><select class="fselect" id="as-staff"><option>A</option><option>B</option><option>C</option></select></div>
       <div class="fg"><label class="flabel">Shift</label><select class="fselect" id="as-shift"><option>Day</option><option>Afternoon</option><option>Night</option></select></div>
+      <div class="fg"><label class="flabel">Tenant_Level Charge</label><select class="fselect" id="as-level" onchange="filterAssignRateCodes()">
+          <option value="">— ทั้งหมด —</option>
+          <option value="Normal">Normal</option>
+          <option value="Special">Special</option>
+        </select></div>
       <div class="fg"><label class="flabel">Rate Code</label><select class="fselect" id="as-code"></select></div>
       <div class="fg"><label class="flabel">Billing Date Period (วันที่วางบิล)</label>
         <select class="fselect" id="as-billing">
@@ -1079,7 +1084,7 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="mtitle">💰 เพิ่ม/แก้ไข Rate Code <button class="mclose" onclick="closeMod('mod-add-rate')">✕</button></div>
     <div class="form-grid">
       <div class="fg"><label class="flabel">Building</label><select class="fselect" id="ar-bld"><option>BTE</option><option>BTB</option><option>UBCII</option></select></div>
-      <div class="fg"><label class="flabel">Level</label><select class="fselect" id="ar-level"><option>Normal</option><option>VIP</option><option>VVIP</option></select></div>
+      <div class="fg"><label class="flabel">Tenant_Level Charge</label><select class="fselect" id="ar-level"><option>Normal</option><option>Special</option></select></div>
       <div class="fg full"><label class="flabel">Code OT Air</label><input class="finput" id="ar-code" placeholder="XXXCH_OT_AIR_BTE_..."></div>
       <div class="fg full"><label class="flabel">Description</label><textarea class="ftextarea" id="ar-desc" style="min-height:50px"></textarea></div>
       <div class="fg"><label class="flabel">Minimum Charge (฿)</label><input class="finput" type="number" id="ar-minchg" value="0"></div>
@@ -1316,11 +1321,13 @@ function goPage(id, navEl){
 // ============================================================
 async function initApp(){
   showSync(true);
-  if(USE_LIVE_API){ await loadAllLive(); }
+  if(USE_LIVE_API){ await loadPriorityLive(); }
   else { loadFromEmbedded(); }
   showSync(false);
   setSyncStatus();
   renderAllModules();
+  // โหลด Engineering + CS Report เป็น background ไม่บล็อกหน้าจอ
+  if(USE_LIVE_API){ loadEngCSBackground().catch(e=>console.warn('loadEngCSBackground failed:',e.message)); }
 }
 
 function loadFromEmbedded(){
@@ -1335,6 +1342,78 @@ function loadFromEmbedded(){
   dbData.rates = [...EXCEL_DATA.rates];
   dbData.buildings = [...EXCEL_DATA.buildings];
   dbData.tenants = [...EXCEL_DATA.tenants];
+}
+
+async function loadPriorityLive(){
+  // โหลดเฉพาะข้อมูลที่ใช้บ่อย (Tenant/Building/Master) ก่อน เพื่อให้หน้าจอขึ้นเร็ว
+  const [master,tenantOps,buildingOps] = await Promise.all([
+    apiGET({action:'readAll'}),
+    apiGET({action:'read',sheet:'tenant'}),
+    apiGET({action:'read',sheet:'building'}),
+  ]);
+  if(master){
+    dbData.staff=master.staff||EXCEL_DATA.staff;
+    dbData.types=master.types||EXCEL_DATA.types;
+    dbData.levels=master.levels||EXCEL_DATA.levels;
+    dbData.rates=master.rates||EXCEL_DATA.rates;
+    dbData.buildings=master.buildings||EXCEL_DATA.buildings;
+    dbData.tenants=master.tenants||EXCEL_DATA.tenants;
+    allRateCodes=dbData.rates;
+  }
+  gData.tenantReqs = (tenantOps&&tenantOps.data)||EXCEL_DATA.tenantReqs;
+  gData.buildingAssigns = (buildingOps&&buildingOps.data)||EXCEL_DATA.buildingAssigns;
+  // ตั้งค่าว่างไว้ก่อน เดี๋ยว background โหลดมาเติม
+  gData.engWork = gData.engWork||[];
+  gData.csReport = gData.csReport||[];
+  syncBuildingStatusToTenant();
+}
+
+async function loadEngCSBackground(){
+  const wrapEng=document.getElementById('eng-table-wrap');
+  const wrapCS=document.getElementById('cs-table-wrap');
+  if(wrapEng) wrapEng.innerHTML='<div class="loading"><span class="spinner"></span>กำลังโหลดข้อมูล Engineering... <button class="btn btn-o btn-sm" style="margin-left:8px" onclick="loadEngCSBackground()">↻ ลองใหม่</button></div>';
+  if(wrapCS) wrapCS.innerHTML='<div class="loading"><span class="spinner"></span>กำลังโหลดข้อมูล CS Report... <button class="btn btn-o btn-sm" style="margin-left:8px" onclick="loadEngCSBackground()">↻ ลองใหม่</button></div>';
+  try{
+    const timeoutMs=15000;
+    const withTimeout=p=>Promise.race([p,new Promise(res=>setTimeout(()=>res(null),timeoutMs))]);
+    const [engOps,csOps] = await Promise.all([
+      withTimeout(apiGET({action:'read',sheet:'eng'})),
+      withTimeout(apiGET({action:'read',sheet:'cs'})),
+    ]);
+    gData.engWork = (engOps&&engOps.data)||EXCEL_DATA.engWork;
+    gData.csReport = (csOps&&csOps.data)||EXCEL_DATA.csReport;
+  }catch(e){
+    console.warn('loadEngCSBackground:',e.message);
+    gData.engWork = gData.engWork&&gData.engWork.length?gData.engWork:EXCEL_DATA.engWork;
+    gData.csReport = gData.csReport&&gData.csReport.length?gData.csReport:EXCEL_DATA.csReport;
+  }
+  syncBuildingStatusToTenant();
+  gData.tenantReqs=dedup(gData.tenantReqs);
+  gData.buildingAssigns=dedup(gData.buildingAssigns);
+  gData.engWork=dedup(gData.engWork);
+  gData.csReport=dedup(gData.csReport);
+  renderEngTable();
+  renderCSTable();
+  updateAllStats();
+}
+
+function syncBuildingStatusToTenant(){
+  // Sync สถานะจาก buildingAssigns → tenantReqs
+  const _bldMap={};
+  (gData.buildingAssigns||[]).forEach(function(b){
+    if(b['OT-AIR Work Request No.']) _bldMap[b['OT-AIR Work Request No.']]=b;
+  });
+  (gData.tenantReqs||[]).forEach(function(t){
+    const _no=t['OT-AIR Work Request No.'];
+    if(_no&&_bldMap[_no]){
+      const _b=_bldMap[_no];
+      ['Manager Consider(Approved/Waiting/Reject)',
+       'Admin helpdaesk (Acknowledge/Reject)',
+       'Staff Name','Code OT Air','Billing Date Period'].forEach(function(f){
+        if(_b[f]) t[f]=_b[f];
+      });
+    }
+  });
 }
 
 async function loadAllLive(){
@@ -1353,22 +1432,7 @@ async function loadAllLive(){
     gData.buildingAssigns=ops.buildingAssigns||EXCEL_DATA.buildingAssigns;
     gData.engWork=ops.engWork||EXCEL_DATA.engWork;
     gData.csReport=ops.csReport||EXCEL_DATA.csReport;
-    // Sync สถานะจาก buildingAssigns → tenantReqs ทันที
-    const _bldMap={};
-    gData.buildingAssigns.forEach(function(b){
-      if(b['OT-AIR Work Request No.']) _bldMap[b['OT-AIR Work Request No.']]=b;
-    });
-    gData.tenantReqs.forEach(function(t){
-      const _no=t['OT-AIR Work Request No.'];
-      if(_no&&_bldMap[_no]){
-        const _b=_bldMap[_no];
-        ['Manager Consider(Approved/Waiting/Reject)',
-         'Admin helpdaesk (Acknowledge/Reject)',
-         'Staff Name','Code OT Air','Billing Date Period'].forEach(function(f){
-          if(_b[f]) t[f]=_b[f];
-        });
-      }
-    });
+    syncBuildingStatusToTenant();
   }
 }
 
@@ -1386,7 +1450,6 @@ function renderAllModules(){
   gData.csReport        = dedup(gData.csReport);
   renderTenantTable();
   renderBuildingTable();
-  renderManagerTable();
   renderEngTable();
   renderCSTable();
   renderRateTable(allRateCodes);
@@ -1407,7 +1470,7 @@ function updateAllStats(){
   // Tenant
   se('ts-total',td.length);
   se('ts-pending',td.filter(r=>getStatus(r)==='pending').length);
-  se('ts-approved',td.filter(r=>getStatus(r)==='approved').length);
+  se('ts-approved',td.filter(r=>getStatus(r)==='acknowledged'||getStatus(r)==='approved').length);
   let hrs=0; td.forEach(r=>{hrs+=(timeToMin(r['Finish time'])-timeToMin(r['Start time'])+1440)%1440/60;});
   se('ts-hours',hrs.toFixed(1));
   // Building
@@ -1415,11 +1478,6 @@ function updateAllStats(){
   se('bs-wait',bd.filter(r=>r['Admin helpdaesk (Acknowledge/Reject)']&&!r['Manager Consider(Approved/Waiting/Reject)']).length);
   se('bs-ok',bd.filter(r=>r['Manager Consider(Approved/Waiting/Reject)']==='Approved').length);
   se('bs-total',bd.length);
-  // Manager
-  se('ms-pending',bd.filter(r=>r['Admin helpdaesk (Acknowledge/Reject)']&&!r['Manager Consider(Approved/Waiting/Reject)']).length);
-  se('ms-approved',bd.filter(r=>r['Manager Consider(Approved/Waiting/Reject)']==='Approved').length);
-  se('ms-rejected',bd.filter(r=>r['Manager Consider(Approved/Waiting/Reject)']==='Reject').length);
-  se('ms-total',bd.length);
   // Engineering
   se('es-total',ed.length);
   se('es-open',ed.filter(r=>r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)']).length);
@@ -1458,7 +1516,7 @@ function dedup(arr){
 
 function renderTenantTable(){
   const data = filterByBuilding(gData.tenantReqs);
-  const wrap = document.getElementById('tenant-table-wrap');
+  const wrap = document.getElementById('tenant-table-wrap'); if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ยังไม่มีคำขอ OT Air');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>เลขที่</th><th>วันที่</th><th>อาคาร</th><th>ประเภท</th><th>บริษัท</th><th>Space</th><th>เวลา</th><th>สถานะ</th><th></th></tr></thead>
@@ -1478,7 +1536,7 @@ function renderTenantTable(){
 
 function renderBuildingTable(){
   const data = filterByBuilding(gData.buildingAssigns);
-  const wrap = document.getElementById('building-table-wrap');
+  const wrap = document.getElementById('building-table-wrap'); if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีข้อมูล');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>เลขที่</th><th>Tenant</th><th>Bld</th><th>Space</th><th>เวลา</th><th>Admin</th><th>ช่าง</th><th>Billing</th><th></th></tr></thead>
@@ -1503,33 +1561,11 @@ function renderBuildingTable(){
   </table></div>`;
 }
 
-function renderManagerTable(){
-  const data = filterByBuilding(gData.buildingAssigns);
-  const wrap = document.getElementById('manager-table-wrap');
-  if(!data.length){wrap.innerHTML=emptyState('ไม่มีข้อมูล');return;}
-  wrap.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>เลขที่</th><th>Tenant</th><th>Bld</th><th>Space</th><th>เวลา</th><th>ช่าง</th><th>สถานะ</th><th></th></tr></thead>
-    <tbody>${data.map((r,i)=>{
-      const mgr=r['Manager Consider(Approved/Waiting/Reject)'];
-      const ack=r['Admin helpdaesk (Acknowledge/Reject)'];
-      const canApprove=mgr!=='Approved'&&mgr!=='Reject';
-      return `<tr>
-        <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
-        <td style="font-size:11px">${r['Name']||'—'}</td>
-        <td>${bldTag(r['Building'])}</td>
-        <td><strong>${r['Space']||'—'}</strong></td>
-        <td style="font-size:11px;white-space:nowrap">${r['Start time']||'—'}–${r['Finish time']||'—'}</td>
-        <td>${r['Staff Name']||'—'}</td>
-        <td>${mgr==='Approved'?`<span class="tag t-green">✓ Approved</span>`:mgr==='Reject'?`<span class="tag t-red">✕ Rejected</span>`:ack?`<span class="tag t-amber">⏳ รออนุมัติ</span>`:`<span class="tag t-gray">รอ Ack</span>`}</td>
-        <td>${canApprove?`<div style="display:flex;gap:3px"><button class="btn btn-g btn-sm" onclick="doApprove(${i},'Approved')">✓ อนุมัติ</button><button class="btn btn-r btn-sm" onclick="doApprove(${i},'Reject')">✕ ปฏิเสธ</button></div>`:`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'building')">ดูรายละเอียด</button>`}</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table></div>`;
-}
+
 
 function renderEngTable(){
   const data = filterByBuilding(gData.engWork);
-  const wrap = document.getElementById('eng-table-wrap');
+  const wrap = document.getElementById('eng-table-wrap'); if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีงาน OT');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>เลขที่</th><th>Bld</th><th>Space</th><th>เวลา Plan</th><th>ช่าง</th><th>Rate Code</th><th>เปิดจริง</th><th>ปิดจริง</th><th>ชม.จริง</th><th>สถานะ</th><th></th></tr></thead>
@@ -1557,7 +1593,7 @@ function renderEngTable(){
 
 function renderCSTable(){
   const data = filterByBuilding(gData.csReport);
-  const wrap = document.getElementById('cs-table-wrap');
+  const wrap = document.getElementById('cs-table-wrap'); if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีข้อมูล');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>เลขที่</th><th>Tenant</th><th>Bld</th><th>Space</th><th>Rate Code</th><th>ชั่วโมง</th><th>พื้นที่</th><th>ขั้นต่ำ</th><th>Area Charge</th><th>รวม (฿)</th></tr></thead>
@@ -1577,13 +1613,14 @@ function renderCSTable(){
 }
 
 function renderRateTable(data){
-  const wrap = document.getElementById('rate-table-wrap');
+  const wrap = document.getElementById('rate-table-wrap'); if(!wrap) return;
   if(!data||!data.length){wrap.innerHTML=emptyState('ไม่พบ Rate Code');return;}
   const filtered = filterByBuilding(data).slice(0,30);
   wrap.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>Building</th><th>Code OT Air</th><th>Description</th><th>Min (฿)</th><th>Monthly (฿)</th><th>Hourly (฿)</th><th>Per M² (฿)</th></tr></thead>
+    <thead><tr><th>Building</th><th>Level</th><th>Code OT Air</th><th>Description</th><th>Min (฿)</th><th>Monthly (฿)</th><th>Hourly (฿)</th><th>Per M² (฿)</th></tr></thead>
     <tbody>${filtered.map(r=>`<tr>
       <td>${bldTag(r['Building name'])}</td>
+      <td><span class="tag" style="background:${r['Tenant_Level Charge']==='Special'?'rgba(244,114,182,.15);color:#f472b6':'rgba(52,211,153,.15);color:#34d399'}">${r['Tenant_Level Charge']||'Normal'}</span></td>
       <td style="font-size:10px;color:var(--accent);font-weight:700">${r['Code OT Air']||'—'}</td>
       <td style="font-size:11px;max-width:200px">${r['Description']||'—'}</td>
       <td>${r['Minimum charge(THB)']?'฿'+Number(r['Minimum charge(THB)']).toLocaleString():'—'}</td>
@@ -1637,6 +1674,9 @@ function doAssign(i){
 
   // Populate Rate Code — กรองตาม Building
   const bld = r['Building'] || '';
+  currentAssignBuilding = bld;
+  const levelSel = document.getElementById('as-level');
+  if(levelSel) levelSel.value = '';
   const rates = (allRateCodes.length ? allRateCodes : EXCEL_DATA.rates).filter(rc =>
     !bld || rc['Building name'] === bld
   );
@@ -1661,6 +1701,19 @@ function doAssign(i){
   }
 
   openMod('mod-assign');
+}
+
+let currentAssignBuilding = '';
+function filterAssignRateCodes(){
+  const level = document.getElementById('as-level').value;
+  const codeSel = document.getElementById('as-code');
+  if(!codeSel) return;
+  const rates = (allRateCodes.length ? allRateCodes : EXCEL_DATA.rates).filter(rc =>
+    (!currentAssignBuilding || rc['Building name'] === currentAssignBuilding) &&
+    (!level || rc['Tenant_Level Charge'] === level)
+  );
+  codeSel.innerHTML='<option value="">— เลือก Rate Code —</option>'+
+    rates.map(rc=>`<option value="${rc['Code OT Air']}">${rc['Code OT Air']} — ${(rc['Description']||'').substring(0,40)}</option>`).join('');
 }
 async function submitAssign(){
   const req=v('as-req'),staff=v('as-staff'),shift=v('as-shift'),code=v('as-code'),ack=v('as-ack'),billing=v('as-billing');
@@ -1693,7 +1746,7 @@ async function doApprove(i,decision){
   const tIdx=gData.tenantReqs.findIndex(t=>t['OT-AIR Work Request No.']===''+no);
   if(tIdx>=0){gData.tenantReqs[tIdx]['Manager Consider(Approved/Waiting/Reject)']=decision;gData.tenantReqs[tIdx]['Manager Name']=currentUser;}
   if(USE_LIVE_API) await apiGET({action:'managerApprove',data:encodeURIComponent(JSON.stringify({reqNo:no,decision,managerName:currentUser}))});
-  renderManagerTable(); renderBuildingTable(); renderTenantTable(); updateAllStats();
+  renderBuildingTable(); renderTenantTable(); updateAllStats();
   toast(decision==='Approved'?'✅ อนุมัติเรียบร้อย — Tenant อัปเดตแล้ว':'❌ ปฏิเสธคำขอแล้ว');
 }
 
@@ -2058,9 +2111,9 @@ function editType(i){const n=prompt('แก้ไข:',dbData.types[i]);if(!n)re
 function deleteType(i){if(!confirm('ลบ?'))return;dbData.types.splice(i,1);renderTypeList();}
 function editLevel(i){const n=prompt('แก้ไข Level:',dbData.levels[i]);if(!n)return;dbData.levels[i]=n.trim();renderLevelList();}
 
-function openAddRate(){['ar-code','ar-desc'].forEach(id=>document.getElementById(id).value='');['ar-minchg','ar-monthly','ar-hourly','ar-area'].forEach(id=>document.getElementById(id).value='0');openMod('mod-add-rate');}
-function editRate(i){const r=dbData.rates[i];if(!r)return;document.getElementById('ar-bld').value=r['Building name']||'BTE';document.getElementById('ar-code').value=r['Code OT Air']||'';document.getElementById('ar-desc').value=r['Description']||'';document.getElementById('ar-minchg').value=r['Minimum charge(THB)']||'0';document.getElementById('ar-monthly').value=r['Addtional charge(THB/Month)']||'0';document.getElementById('ar-hourly').value=r['Addtional charge(THB/Hour)']||'0';document.getElementById('ar-area').value=r['Charge per Area(THB/M2)']||'0';openMod('mod-add-rate');}
-async function saveRateCode(){const code=v('ar-code').trim();if(!code){toast('⚠️ กรุณากรอก Code');return;}const r={'Building name':v('ar-bld'),'Code OT Air':code,'Description':v('ar-desc'),'Minimum charge(THB)':v('ar-minchg'),'Addtional charge(THB/Month)':v('ar-monthly'),'Addtional charge(THB/Hour)':v('ar-hourly'),'Charge per Area(THB/M2)':v('ar-area')};const idx=dbData.rates.findIndex(x=>x['Code OT Air']===code);if(idx>=0)dbData.rates[idx]=r;else dbData.rates.push(r);allRateCodes=dbData.rates;renderRateDB(dbData.rates);if(USE_LIVE_API)await apiGET({action:'saveRate',data:encodeURIComponent(JSON.stringify(r))});closeMod('mod-add-rate');toast('✅ บันทึก Rate Code');}
+function openAddRate(){['ar-code','ar-desc'].forEach(id=>document.getElementById(id).value='');['ar-minchg','ar-monthly','ar-hourly','ar-area'].forEach(id=>document.getElementById(id).value='0');document.getElementById('ar-level').value='Normal';openMod('mod-add-rate');}
+function editRate(i){const r=dbData.rates[i];if(!r)return;document.getElementById('ar-bld').value=r['Building name']||'BTE';document.getElementById('ar-level').value=r['Tenant_Level Charge']||'Normal';document.getElementById('ar-code').value=r['Code OT Air']||'';document.getElementById('ar-desc').value=r['Description']||'';document.getElementById('ar-minchg').value=r['Minimum charge(THB)']||'0';document.getElementById('ar-monthly').value=r['Addtional charge(THB/Month)']||'0';document.getElementById('ar-hourly').value=r['Addtional charge(THB/Hour)']||'0';document.getElementById('ar-area').value=r['Charge per Area(THB/M2)']||'0';openMod('mod-add-rate');}
+async function saveRateCode(){const code=v('ar-code').trim();if(!code){toast('⚠️ กรุณากรอก Code');return;}const r={'Building name':v('ar-bld'),'Tenant_Level Charge':v('ar-level'),'Code OT Air':code,'Description':v('ar-desc'),'Minimum charge(THB)':v('ar-minchg'),'Addtional charge(THB/Month)':v('ar-monthly'),'Addtional charge(THB/Hour)':v('ar-hourly'),'Charge per Area(THB/M2)':v('ar-area')};const idx=dbData.rates.findIndex(x=>x['Code OT Air']===code);if(idx>=0)dbData.rates[idx]=r;else dbData.rates.push(r);allRateCodes=dbData.rates;renderRateDB(dbData.rates);if(USE_LIVE_API)await apiGET({action:'saveRate',data:encodeURIComponent(JSON.stringify(r))});closeMod('mod-add-rate');toast('✅ บันทึก Rate Code');}
 
 function editUnit(i){const r=dbData.buildings[i];if(!r)return;document.getElementById('au-bld').value=r['Building Name']||'BTE';document.getElementById('au-floor').value=r['Floor']||'';document.getElementById('au-unit').value=r['Unit']||'';document.getElementById('au-type').value=r['Unit Type']||'Office';document.getElementById('au-sqm').value=r['SQM']||'';document.getElementById('au-common').value=r['Common Area']||'0';openMod('mod-add-unit');}
 async function saveUnit(){const unit=v('au-unit').trim();if(!unit){toast('⚠️ กรุณากรอก Unit');return;}const r={'Building Name':v('au-bld'),'Floor':v('au-floor'),'Unit':unit,'Unit Type':v('au-type'),'SQM':v('au-sqm'),'Common Area':v('au-common')};const idx=dbData.buildings.findIndex(x=>x['Unit']===unit&&x['Building Name']===r['Building Name']);if(idx>=0)dbData.buildings[idx]=r;else dbData.buildings.push(r);renderBldDB(dbData.buildings);if(USE_LIVE_API)await apiGET({action:'saveUnit',data:encodeURIComponent(JSON.stringify(r))});closeMod('mod-add-unit');toast('✅ บันทึก Unit');}
@@ -2372,10 +2425,10 @@ function statusTag(s){
 
 function typeTag(t){
   if(!t)return'—';
-  if(t.includes('อากาศลมเย็น'))return`<span class="tag t-blue">❄️ อากาศลมเย็น</span>`;
-  if(t.includes('น้ำเย็น'))return`<span class="tag t-navy">💧 น้ำเย็น</span>`;
-  if(t.includes('ระบาย'))return`<span class="tag t-purple">♨️ น้ำระบายฯ</span>`;
-  return`<span class="tag t-gray">${t}</span>`;
+  if(t.includes('อากาศลมเย็น')||t.includes('นอกเวลา'))return`<span class="tag t-blue">🔵 ระบบปรับอากาศนอกเวลา</span>`;
+  if(t.includes('น้ำเย็น'))return`<span class="tag t-navy">🔵 น้ำเย็น</span>`;
+  if(t.includes('ระบาย'))return`<span class="tag t-purple">🔵 น้ำระบายฯ</span>`;
+  return`<span class="tag t-gray">🔵 ${t}</span>`;
 }
 
 function bldTag(b){
@@ -2389,8 +2442,8 @@ function setF(btn,f){
   document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const base=filterByBuilding(gData.tenantReqs);
-  const filtered=f==='pending-t'?base.filter(r=>getStatus(r)==='pending'||getStatus(r)==='acknowledged'):
-    f==='approved-t'?base.filter(r=>getStatus(r)==='approved'):base;
+  const filtered=f==='pending-t'?base.filter(r=>getStatus(r)==='pending'):
+    f==='approved-t'?base.filter(r=>getStatus(r)==='acknowledged'||getStatus(r)==='approved'):base;
   const wrap=document.getElementById('tenant-table-wrap');
   if(!filtered.length){wrap.innerHTML=emptyState('ไม่พบข้อมูล');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
