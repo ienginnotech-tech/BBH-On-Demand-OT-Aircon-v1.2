@@ -623,11 +623,19 @@ tbody tr:hover td{background:var(--surface2)}
           <div class="stats-grid">
             <div class="stat-card"><div class="stat-num" style="color:var(--rose)" id="bs-new">—</div><div class="stat-label">รอ Acknowledge</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--amber)" id="bs-wait">—</div><div class="stat-label">รอมอบหมายช่าง</div></div>
-            <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="bs-ok">—</div><div class="stat-label">Approved</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="bs-ok">—</div><div class="stat-label">มอบหมายช่างแล้ว</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--accent)" id="bs-total">—</div><div class="stat-label">ทั้งหมด</div></div>
           </div>
           <div class="card">
-            <div class="card-header"><div class="card-title"><div class="card-title-icon">📥</div>คำขอ OT ทั้งหมด</div></div>
+            <div class="card-header">
+              <div class="card-title"><div class="card-title-icon">📥</div>คำขอ OT ทั้งหมด</div>
+              <div class="filter-bar" style="margin:0;padding:0">
+                <button class="fbtn active" onclick="setFB(this,'all-b')">ทั้งหมด</button>
+                <button class="fbtn" onclick="setFB(this,'new-b')">รอ Acknowledge</button>
+                <button class="fbtn" onclick="setFB(this,'wait-b')">รอมอบหมายช่าง</button>
+                <button class="fbtn" onclick="setFB(this,'ok-b')">มอบหมายช่างแล้ว</button>
+              </div>
+            </div>
             <div id="building-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
           <div class="card">
@@ -651,13 +659,22 @@ tbody tr:hover td{background:var(--surface2)}
             <div class="sh-sub">บันทึกเปิด/ปิด ระบบ Aircon</div></div>
           </div>
           <div class="stats-grid">
-            <div class="stat-card"><div class="stat-num" style="color:var(--accent)" id="es-today">—</div><div class="stat-label">งานวันนี้</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--rose)" id="es-wait">—</div><div class="stat-label">รอ Acknowledge</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--amber)" id="es-open">—</div><div class="stat-label">กำลังเปิด</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="es-done">—</div><div class="stat-label">ปิดแล้ว</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--purple)" id="es-total">—</div><div class="stat-label">ทั้งหมด</div></div>
           </div>
           <div class="card">
-            <div class="card-header"><div class="card-title"><div class="card-title-icon">🛠</div>งาน OT Engineering</div></div>
+            <div class="card-header">
+              <div class="card-title"><div class="card-title-icon">🛠</div>งาน OT Engineering</div>
+              <div class="filter-bar" style="margin:0;padding:0">
+                <button class="fbtn active" onclick="setFE(this,'all-e')">ทั้งหมด</button>
+                <button class="fbtn" onclick="setFE(this,'wait-e')">รอ Acknowledge</button>
+                <button class="fbtn" onclick="setFE(this,'open-e')">Ack แล้ว — รอเปิด</button>
+                <button class="fbtn" onclick="setFE(this,'opened-e')">กำลังเปิด</button>
+                <button class="fbtn" onclick="setFE(this,'done-e')">ปิดแล้ว</button>
+              </div>
+            </div>
             <div id="eng-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
         </div>
@@ -668,9 +685,6 @@ tbody tr:hover td{background:var(--surface2)}
             <div><div class="sh-title">📊 CS Summarize Report</div>
             <div class="sh-sub">สรุปรายงาน OT Aircon — ทุกอาคาร</div></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <select class="finput" style="width:auto;font-size:11px;padding:6px 10px" id="cs-filter-bld">
-                <option value="">ทุก Building</option><option>BTE</option><option>BTB</option><option>UBCII</option>
-              </select>
               <button class="btn btn-p btn-sm" onclick="globalRefresh()">🔄 โหลด</button>
               <button class="btn btn-o btn-sm" onclick="exportCSV()">⬇ CSV</button>
               <button class="btn btn-o btn-sm" onclick="window.print()">🖨 Print</button>
@@ -683,7 +697,15 @@ tbody tr:hover td{background:var(--surface2)}
             <div class="stat-card"><div class="stat-num" style="color:var(--text)">3</div><div class="stat-label">Buildings</div></div>
           </div>
           <div class="card">
-            <div class="card-header"><div class="card-title"><div class="card-title-icon">📄</div>รายงานสรุป OT Air</div></div>
+            <div class="card-header">
+              <div class="card-title"><div class="card-title-icon">📄</div>รายงานสรุป OT Air</div>
+              <div class="filter-bar" style="margin:0;padding:0">
+                <button class="fbtn active" onclick="setFCS(this,'')">ทั้งหมด</button>
+                <button class="fbtn" onclick="setFCS(this,'BTE')">BTE</button>
+                <button class="fbtn" onclick="setFCS(this,'BTB')">BTB</button>
+                <button class="fbtn" onclick="setFCS(this,'UBCII')">UBCII</button>
+              </div>
+            </div>
             <div id="cs-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
         </div>
@@ -1480,9 +1502,9 @@ function updateAllStats(){
   se('bs-total',bd.length);
   // Engineering
   se('es-total',ed.length);
+  se('es-wait',ed.filter(r=>r['Engineering Action(Acknowledge/Reject)']!=='Acknowledge').length);
   se('es-open',ed.filter(r=>r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)']).length);
   se('es-done',ed.filter(r=>r['Close_OT-Air(Time)']).length);
-  se('es-today',ed.length);
   // CS
   se('cs-total',cd.length);
   let chrs=0,cost=0;
@@ -1536,7 +1558,11 @@ function renderTenantTable(){
 
 function renderBuildingTable(){
   const data = filterByBuilding(gData.buildingAssigns);
-  const wrap = document.getElementById('building-table-wrap'); if(!wrap) return;
+  renderBuildingRows(data, document.getElementById('building-table-wrap'));
+}
+
+function renderBuildingRows(data, wrap){
+  if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีข้อมูล');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>เลขที่</th><th>Tenant</th><th>Bld</th><th>Space</th><th>เวลา</th><th>Admin</th><th>ช่าง</th><th>Billing</th><th></th></tr></thead>
@@ -1561,19 +1587,50 @@ function renderBuildingTable(){
   </table></div>`;
 }
 
+function setFB(btn,f){
+  document.querySelectorAll('#page-building .fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const base=filterByBuilding(gData.buildingAssigns);
+  const filtered=
+    f==='new-b'?base.filter(r=>!r['Admin helpdaesk (Acknowledge/Reject)']):
+    f==='wait-b'?base.filter(r=>r['Admin helpdaesk (Acknowledge/Reject)']&&!r['Staff Name']):
+    f==='ok-b'?base.filter(r=>!!r['Staff Name']):
+    base;
+  renderBuildingRows(filtered, document.getElementById('building-table-wrap'));
+}
+
 
 
 function renderEngTable(){
   const data = filterByBuilding(gData.engWork);
-  const wrap = document.getElementById('eng-table-wrap'); if(!wrap) return;
+  renderEngRows(data, document.getElementById('eng-table-wrap'));
+}
+
+function renderEngRows(data, wrap){
+  if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีงาน OT');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>เลขที่</th><th>Bld</th><th>Space</th><th>เวลา Plan</th><th>ช่าง</th><th>Rate Code</th><th>เปิดจริง</th><th>ปิดจริง</th><th>ชม.จริง</th><th>สถานะ</th><th></th></tr></thead>
     <tbody>${data.map((r,i)=>{
+      const ack=r['Engineering Action(Acknowledge/Reject)'];
+      const isAck=ack==='Acknowledge';
       const isOpen=r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)'];
       const isDone=r['Close_OT-Air(Time)'];
-      const stTag=isDone?`<span class="tag t-green">✓ ปิดแล้ว</span>`:isOpen?`<span class="tag t-amber">⚙ กำลังเปิด</span>`:`<span class="tag t-gray">รอเริ่ม</span>`;
-      const action=isDone?`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button>`:isOpen?`<button class="btn btn-r btn-sm" onclick="engAction(${i},'close')">■ ปิด</button>`:`<button class="btn btn-g btn-sm" onclick="engAction(${i},'open')">▶ เปิด</button>`;
+      let stTag;
+      if(isDone) stTag=`<span class="tag t-green">✓ ปิดแล้ว</span>`;
+      else if(isOpen) stTag=`<span class="tag t-amber">⚙ กำลังเปิด</span>`;
+      else if(isAck) stTag=`<span class="tag t-purple">✓ Ack — รอเปิด</span>`;
+      else stTag=`<span class="tag t-gray">รอ Acknowledge</span>`;
+      let action;
+      if(isDone){
+        action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button>`;
+      } else if(isOpen){
+        action=`<button class="btn btn-r btn-sm" onclick="engAction(${i},'close')">■ ปิด</button>`;
+      } else if(isAck){
+        action=`<button class="btn btn-g btn-sm" onclick="engAction(${i},'open')">▶ เปิด</button>`;
+      } else {
+        action=`<button class="btn btn-g btn-sm" onclick="doEngAck(${i})">✓ Ack</button><button class="btn btn-r btn-sm" style="margin-left:3px" onclick="doEngReject(${i})">✕</button>`;
+      }
       return `<tr>
         <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
         <td>${bldTag(r['Building'])}</td>
@@ -1585,15 +1642,32 @@ function renderEngTable(){
         <td style="color:var(--rose);font-weight:600">${r['Close_OT-Air(Time)']||'—'}</td>
         <td>${(r['Cal_Actual_Hours']&&parseFloat(r['Cal_Actual_Hours'])>0)?`<strong style="color:var(--green)">${parseFloat(r['Cal_Actual_Hours']).toFixed(2)} ชม.</strong>`:(r['Open_OT-Air(Time)']&&r['Close_OT-Air(Time)'])?`<strong style="color:var(--green)">${((timeToMin(r['Close_OT-Air(Time)'])-timeToMin(r['Open_OT-Air(Time)'])+1440)%1440/60).toFixed(2)} ชม.</strong>`:'—'}</td>
         <td>${stTag}</td>
-        <td>${action}</td>
+        <td style="white-space:nowrap">${action}</td>
       </tr>`;
     }).join('')}</tbody>
   </table></div>`;
 }
 
+function setFE(btn,f){
+  document.querySelectorAll('#page-eng .fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const base=filterByBuilding(gData.engWork);
+  const filtered=
+    f==='wait-e'?base.filter(r=>r['Engineering Action(Acknowledge/Reject)']!=='Acknowledge'):
+    f==='open-e'?base.filter(r=>r['Engineering Action(Acknowledge/Reject)']==='Acknowledge'&&!r['Open_OT-Air(Time)']):
+    f==='opened-e'?base.filter(r=>r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)']):
+    f==='done-e'?base.filter(r=>!!r['Close_OT-Air(Time)']):
+    base;
+  renderEngRows(filtered, document.getElementById('eng-table-wrap'));
+}
+
 function renderCSTable(){
   const data = filterByBuilding(gData.csReport);
-  const wrap = document.getElementById('cs-table-wrap'); if(!wrap) return;
+  renderCSRows(data, document.getElementById('cs-table-wrap'));
+}
+
+function renderCSRows(data, wrap){
+  if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีข้อมูล');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>เลขที่</th><th>Tenant</th><th>Bld</th><th>Space</th><th>Rate Code</th><th>ชั่วโมง</th><th>พื้นที่</th><th>ขั้นต่ำ</th><th>Area Charge</th><th>รวม (฿)</th></tr></thead>
@@ -1610,6 +1684,14 @@ function renderCSTable(){
       <td><strong style="color:var(--text)">฿${num(r['Total Cost OT.Air(Rate Charge+Area)_THB'])}</strong></td>
     </tr>`).join('')}</tbody>
   </table></div><div style="font-size:10px;color:var(--text3);padding:8px 12px">คลิกแถวเพื่อดูรายละเอียด</div>`;
+}
+
+function setFCS(btn,bld){
+  document.querySelectorAll('#page-cs .fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const base=filterByBuilding(gData.csReport);
+  const filtered=bld?base.filter(r=>(r['Building']||'')===bld):base;
+  renderCSRows(filtered, document.getElementById('cs-table-wrap'));
 }
 
 function renderRateTable(data){
@@ -1753,7 +1835,28 @@ async function doApprove(i,decision){
 // ============================================================
 // ACTIONS: ENGINEERING
 // ============================================================
+async function doEngAck(i){
+  const r=gData.engWork[i]; if(!r)return;
+  const no=r['OT-AIR Work Request No.'];
+  r['Engineering Action(Acknowledge/Reject)']='Acknowledge';
+  if(USE_LIVE_API) await apiGET({action:'engAck',data:encodeURIComponent(JSON.stringify({reqNo:no,decision:'Acknowledge'}))});
+  renderEngTable(); updateAllStats();
+  toast('✅ Engineering Acknowledge '+no+' — กดเปิดแอร์ได้แล้ว');
+}
+async function doEngReject(i){
+  const r=gData.engWork[i]; if(!r)return;
+  if(!confirm('ยืนยัน Reject งาน '+r['OT-AIR Work Request No.']+'?'))return;
+  r['Engineering Action(Acknowledge/Reject)']='Reject';
+  if(USE_LIVE_API) await apiGET({action:'engAck',data:encodeURIComponent(JSON.stringify({reqNo:r['OT-AIR Work Request No.'],decision:'Reject'}))});
+  renderEngTable(); updateAllStats();
+  toast('❌ Reject งาน '+r['OT-AIR Work Request No.']);
+}
 function engAction(i,type){
+  const r0=gData.engWork[i]||{};
+  if(type==='open' && r0['Engineering Action(Acknowledge/Reject)']!=='Acknowledge'){
+    toast('⚠️ กรุณา Acknowledge งานนี้ก่อนเปิดแอร์');
+    return;
+  }
   currentEngRow=i;
   const r=gData.engWork[i]||{};
   const now=new Date();
