@@ -616,9 +616,9 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
         <option value="tenant-UBCII">Tenant — UBCII</option>
       </optgroup>
       <optgroup label="🏗️ CLS">
-        <option value="building-BTE">Building — BTE</option>
-        <option value="building-BTB">Building — BTB</option>
-        <option value="building-UBCII">Building — UBCII</option>
+        <option value="building-BTE">CLS — BTE</option>
+        <option value="building-BTB">CLS — BTB</option>
+        <option value="building-UBCII">CLS — UBCII</option>
       </optgroup>
       <optgroup label="🔧 Engineering">
         <option value="eng-BTE">Engineering — BTE</option>
@@ -2934,21 +2934,21 @@ function generateYADI() {
     var dObj = parseDate(startDateStr);
     if (!dObj || isNaN(dObj)) return { postMonth:'', fromDate:'', toDate:'' };
     var bd = parseInt(bilDay) || 5;
-    // POSTMONTH = วันที่ 1 เดือนถัดจาก Start Date
-    var pm = new Date(dObj.getFullYear(), dObj.getMonth() + 1, 1);
-    // FROMDATE = POSTMONTH + 1 เดือน วันที่ billingDay
-    var fd = new Date(pm.getFullYear(), pm.getMonth() + 1, bd);
+    // POSTMONTH = วันที่ 1 ของเดือนเดียวกับ DATE
+    var pm = new Date(dObj.getFullYear(), dObj.getMonth(), 1);
+    // FROMDATE = วันที่ billingDay ของเดือนเดียวกับ POSTMONTH (ไม่บวกเดือน)
+    var fd = new Date(pm.getFullYear(), pm.getMonth(), bd);
     // TODATE = FROMDATE + 1 เดือน - 1 วัน
     var td = new Date(fd.getFullYear(), fd.getMonth() + 1, bd - 1);
     return { postMonth: fmtDate(pm), fromDate: fmtDate(fd), toDate: fmtDate(td) };
   }
 
-  // Filter เดือน POSTMONTH
+  // Filter เดือน POSTMONTH = เดือนเดียวกับ DATE ที่ Tenant แจ้ง
   var filtered = csData.filter(function(r) {
     var startD = r['Start Date'] || r['Date'] || '';
     var dObj = parseDate(startD);
     if (!dObj || isNaN(dObj)) return false;
-    var pm = new Date(dObj.getFullYear(), dObj.getMonth() + 1, 1);
+    var pm = new Date(dObj.getFullYear(), dObj.getMonth(), 1);
     return pm.getMonth() + 1 === month && pm.getFullYear() === year;
   });
 
