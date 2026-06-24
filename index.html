@@ -814,6 +814,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                 <button class="fbtn" onclick="setFB(this,'new-b')">รอ Acknowledge</button>
                 <button class="fbtn" onclick="setFB(this,'wait-b')">รอมอบหมายช่าง</button>
                 <button class="fbtn" onclick="setFB(this,'ok-b')">มอบหมายช่างแล้ว</button>
+                <button class="fbtn" onclick="setFB(this,'reject-b')" style="color:var(--rose)">❌ แจ้งซ้ำ/ยกเลิก</button>
               </div>
             </div>
             <div id="building-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
@@ -1804,19 +1805,29 @@ function renderBuildingRows(data, wrap){
     <thead><tr><th>เลขที่</th><th>Tenant</th><th>Bld</th><th>Space</th><th>เวลา</th><th>Admin</th><th>ช่าง</th><th>Billing</th><th></th></tr></thead>
     <tbody>${data.map((r,i)=>{
       const ack=r['Admin helpdesk (Acknowledge/Reject)'];
-      const mgr=r['Manager Consider(Approved/Waiting/Reject)'];
-      const ackBtns=!ack?`<button class="btn btn-g btn-sm" onclick="doAck(${i})">✓ Ack</button><button class="btn btn-r btn-sm" style="margin-left:3px" onclick="doReject(${i})">✕</button>`:'' ;
-      const actions=`<div style="display:flex;gap:3px;flex-wrap:wrap">${ackBtns}<button class="btn btn-p btn-sm" onclick="doAssign(${i})">${r['Staff Name']?'✏️ แก้ไข':'👷 มอบหมาย'}</button><button class="btn btn-o btn-sm" onclick="showDetail(${i},'building')">ดู</button></div>`;
-      return `<tr>
-        <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
+      const isRejected = ack==='Reject';
+      const isAcked = ack==='Acknowledge' || ack==='Acknowledde';
+      // ปุ่ม Ack (แสดงเฉพาะถ้ายังไม่ Ack และไม่ Reject)
+      const ackBtn = (!ack||isRejected) && !isAcked ? `<button class="btn btn-g btn-sm" onclick="doAck(${i})">✓ Ack</button>` : '';
+      // ปุ่ม Reject — แสดงทุกแถวที่ยังไม่ Reject
+      const rejBtn = !isRejected ? `<button class="btn btn-r btn-sm" onclick="doReject(${i})" title="แจ้งซ้ำ/ยกเลิก">✕ Reject</button>` : `<button class="btn btn-g btn-sm" onclick="doAck(${i})" title="ยกเลิก Reject">↩ Restore</button>`;
+      const actions=`<div style="display:flex;gap:3px;flex-wrap:wrap">${ackBtn}${rejBtn}${!isRejected?`<button class="btn btn-p btn-sm" onclick="doAssign(${i})">${r['Staff Name']?'✏️ แก้ไข':'👷 มอบหมาย'}</button>`:''}<button class="btn btn-o btn-sm" onclick="showDetail(${i},'building')">ดู</button></div>`;
+      // style แถว Rejected
+      const rowStyle = isRejected ? 'opacity:.55;background:rgba(248,81,73,.04)' : '';
+      const adminTag = isRejected
+        ? `<span class="tag t-red">❌ แจ้งซ้ำ/ยกเลิก</span>`
+        : isAcked
+          ? `<span class="tag t-green">✓ Acknowledge</span>`
+          : `<span class="tag t-amber">⏳ รอ</span>`;
+      return `<tr style="${rowStyle}">
+        <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong></td>
         <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Name']||'—'}</td>
         <td>${bldTag(r['Building'])}</td>
         <td><strong>${r['Space']||'—'}</strong></td>
         <td style="font-size:11px;white-space:nowrap">${r['Start time']||'—'}–${r['Finish time']||'—'}</td>
-        <td>${ack?`<span class="tag t-green">✓ ${ack}</span>`:`<span class="tag t-amber">⏳ รอ</span>`}</td>
-        <td>${r['Staff Name']?`<span class="tag t-purple">${r['Staff Name']}</span>`:'—'}</td>
-      <td>${r['Billing Date Period']?`<span class="tag t-amber">วันที่ ${r['Billing Date Period']}</span>`:'—'}</td>
-
+        <td>${adminTag}</td>
+        <td>${r['Staff Name']&&!isRejected?`<span class="tag t-purple">${r['Staff Name']}</span>`:'—'}</td>
+        <td>${r['Billing Date Period']&&!isRejected?`<span class="tag t-amber">วันที่ ${r['Billing Date Period']}</span>`:'—'}</td>
         <td style="white-space:nowrap">${actions}</td>
       </tr>`;
     }).join('')}</tbody>
@@ -1829,8 +1840,9 @@ function setFB(btn,f){
   const base=filterByBuilding(gData.buildingAssigns);
   const filtered=
     f==='new-b'?base.filter(r=>!r['Admin helpdesk (Acknowledge/Reject)']):
-    f==='wait-b'?base.filter(r=>r['Admin helpdesk (Acknowledge/Reject)']&&!r['Staff Name']):
-    f==='ok-b'?base.filter(r=>!!r['Staff Name']):
+    f==='wait-b'?base.filter(r=>r['Admin helpdesk (Acknowledge/Reject)']&&r['Admin helpdesk (Acknowledge/Reject)']!=='Reject'&&!r['Staff Name']):
+    f==='ok-b'?base.filter(r=>!!r['Staff Name']&&r['Admin helpdesk (Acknowledge/Reject)']!=='Reject'):
+    f==='reject-b'?base.filter(r=>r['Admin helpdesk (Acknowledge/Reject)']==='Reject'):
     base;
   renderBuildingRows(filtered, document.getElementById('building-table-wrap'));
 }
@@ -1845,30 +1857,36 @@ function renderEngTable(){
 function renderEngRows(data, wrap){
   if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีงาน OT');return;}
+  // ดึง reject map จาก buildingAssigns
+  const rejectSet=new Set((gData.buildingAssigns||[]).filter(r=>r['Admin helpdesk (Acknowledge/Reject)']==='Reject').map(r=>r['OT-AIR Work Request No.']));
   wrap.innerHTML=`<div class="table-wrap"><table>
     <thead><tr><th>เลขที่</th><th>Bld</th><th>Space</th><th>เวลา Plan</th><th>ช่าง</th><th>Rate Code</th><th>เปิดจริง</th><th>ปิดจริง</th><th>ชม.จริง</th><th>สถานะ</th><th></th></tr></thead>
     <tbody>${data.map((r,i)=>{
+      const isRejected=rejectSet.has(r['OT-AIR Work Request No.']);
       const ack=r['Engineering Action(Acknowledge/Reject)'];
       const isAck=ack==='Acknowledge';
       const isOpen=r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)'];
       const isDone=r['Close_OT-Air(Time)'];
-      let stTag;
-      if(isDone) stTag=`<span class="tag t-green">✓ ปิดแล้ว</span>`;
-      else if(isOpen) stTag=`<span class="tag t-amber">⚙ กำลังเปิด</span>`;
-      else if(isAck) stTag=`<span class="tag t-purple">✓ Ack — รอเปิด</span>`;
-      else stTag=`<span class="tag t-gray">รอ Acknowledge</span>`;
-      let action;
-      if(isDone){
+      let stTag,action;
+      if(isRejected){
+        stTag=`<span class="tag t-red">❌ ยกเลิก/แจ้งซ้ำ</span>`;
+        action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button>`;
+      } else if(isDone){
+        stTag=`<span class="tag t-green">✓ ปิดแล้ว</span>`;
         action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button>`;
       } else if(isOpen){
+        stTag=`<span class="tag t-amber">⚙ กำลังเปิด</span>`;
         action=`<button class="btn btn-r btn-sm" onclick="engAction(${i},'close')">■ ปิด</button>`;
       } else if(isAck){
+        stTag=`<span class="tag t-purple">✓ Ack — รอเปิด</span>`;
         action=`<button class="btn btn-g btn-sm" onclick="engAction(${i},'open')">▶ เปิด</button>`;
       } else {
+        stTag=`<span class="tag t-gray">รอ Acknowledge</span>`;
         action=`<button class="btn btn-g btn-sm" onclick="doEngAck(${i})">✓ Ack</button><button class="btn btn-r btn-sm" style="margin-left:3px" onclick="doEngReject(${i})">✕</button>`;
       }
-      return `<tr>
-        <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
+      const rowStyle=isRejected?'opacity:.5;background:rgba(248,81,73,.04)':'';
+      return `<tr style="${rowStyle}">
+        <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong></td>
         <td>${bldTag(r['Building'])}</td>
         <td><strong>${r['Space']||'—'}</strong></td>
         <td style="font-size:11px;white-space:nowrap">${r['Start time']||'—'}–${r['Finish time']||'—'}</td>
@@ -2263,7 +2281,7 @@ function showDetail(i,type){
         <div class="tli"><div class="tldot done"></div><div class="tlt">Tenant แจ้งคำขอ</div><div class="tls">${fmtDate(r['Date'])}</div></div>
         <div class="tli"><div class="tldot ${ack?'done':'pending'}"></div><div class="tlt">Admin ${ack||'รอ Acknowledge'}</div></div>
         <div class="tli"><div class="tldot ${r['Staff Name']?'done':'empty'}"></div><div class="tlt">มอบหมายช่าง${r['Staff Name']?' → '+r['Staff Name']:''}</div></div>
-        <div class="tli"><div class="tldot ${mgr==='Approved'?'done':mgr?'pending':'empty'}"></div><div class="tlt">Manager ${mgr||'รอ Approve'}</div></div>
+
         <div class="tli"><div class="tldot ${openT?'done':'empty'}"></div><div class="tlt">${openT?'เปิดระบบ เวลา '+openT:'รอเปิดระบบ'}</div></div>
         <div class="tli"><div class="tldot ${closeT?'done':'empty'}"></div><div class="tlt">${closeT?'ปิดระบบ เวลา '+closeT:'รอปิดระบบ'}</div></div>
       </div>
@@ -2790,17 +2808,19 @@ function timeToMin(t){if(!t)return 0;const p=String(t).split(':');return parseIn
 function getStatus(r){
   const mgr=r['Manager Consider(Approved/Waiting/Reject)'];
   const ack=r['Admin helpdesk (Acknowledge/Reject)'];
+  if(ack==='Reject')return'rejected';   // CLS Reject = ยกเลิก/แจ้งซ้ำ
   if(mgr==='Approved')return'approved';
   if(mgr==='Reject')return'rejected';
+  if(ack==='Acknowledge'||ack==='Acknowledde')return'acknowledged';
   if(ack)return'acknowledged';
   return'pending';
 }
 
 function statusTag(s){
   const m={
-    approved:     '<span class="tag t-green">✓ Approved</span>',
-    rejected:     '<span class="tag t-red">✕ Rejected</span>',
-    acknowledged: '<span class="tag t-blue">👁 Acknowledged</span>',
+    approved:     '<span class="tag t-green">✓ Acknowledged</span>',
+    rejected:     '<span class="tag t-red">❌ ยกเลิก/แจ้งซ้ำ</span>',
+    acknowledged: '<span class="tag t-green">✓ Acknowledged</span>',
     pending:      '<span class="tag t-amber">⏳ Pending</span>',
   };
   return m[s]||'<span class="tag t-gray">'+s+'</span>';
@@ -2943,8 +2963,17 @@ function generateYADI() {
     return { postMonth: fmtDate(pm), fromDate: fmtDate(fd), toDate: fmtDate(td) };
   }
 
-  // Filter เดือน POSTMONTH = เดือนเดียวกับ DATE ที่ Tenant แจ้ง
+  // สร้าง reject map จาก Building_OT Assign
+  var rejectMap = {};
+  bldData.forEach(function(r) {
+    if (r['Admin helpdesk (Acknowledge/Reject)'] === 'Reject') {
+      rejectMap[r['OT-AIR Work Request No.']] = true;
+    }
+  });
+
+  // Filter เดือน POSTMONTH = เดือนเดียวกับ DATE ที่ Tenant แจ้ง (ตัด Rejected ออก)
   var filtered = csData.filter(function(r) {
+    if (rejectMap[r['OT-AIR Work Request No.']]) return false; // ตัด Rejected
     var startD = r['Start Date'] || r['Date'] || '';
     var dObj = parseDate(startD);
     if (!dObj || isNaN(dObj)) return false;
