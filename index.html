@@ -1745,9 +1745,12 @@ function startBadgeTimer(){
       // reload data เบาๆ แล้วอัปเดต badge
       try{
         const res = await apiGET({action:'readOps'});
-        if(res.tenantReqs)   gData.tenantReqs      = dedup(res.tenantReqs);
-        if(res.buildingAssigns) gData.buildingAssigns = dedup(res.buildingAssigns);
-        if(res.engWork)      gData.engWork          = dedup(res.engWork);
+        if(res.tenantReqs)      gData.tenantReqs      = dedup(res.tenantReqs);
+        if(res.buildingAssigns)  gData.buildingAssigns = dedup(res.buildingAssigns);
+        if(res.engWork)          gData.engWork         = dedup(res.engWork);
+        if(res.csReport)         gData.csReport        = dedup(res.csReport);
+        renderEngTable();
+        renderBuildingTable();
         updateNavBadges();
       }catch(e){}
     }
@@ -1785,13 +1788,17 @@ function startCSAutoRefresh(pageId){
   _csRefreshTimer = setInterval(async()=>{
     try{
       const res = await apiGET({action:'readOps'});
-      if(res.csReport) gData.csReport = dedup(res.csReport);
+      // อัปเดตทุก dataset เพื่อให้ Reject/Status ถูกต้องทุกหน้า
+      if(res.csReport)        gData.csReport        = dedup(res.csReport);
+      if(res.engWork)         gData.engWork          = dedup(res.engWork);
+      if(res.buildingAssigns) gData.buildingAssigns  = dedup(res.buildingAssigns);
+      if(res.tenantReqs)      gData.tenantReqs       = dedup(res.tenantReqs);
       renderCSTable();
+      renderEngTable();
       updateNavBadges();
-      // แสดง indicator เล็กๆ ว่า refresh แล้ว
       const el = document.getElementById('cs-refresh-indicator');
-      if(el){ el.textContent='🔄 อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
-    }catch(e){ console.warn('CS auto-refresh error:',e.message); }
+      if(el){ el.textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+    }catch(e){ console.warn('auto-refresh error:',e.message); }
   }, 30000);
 }
 
