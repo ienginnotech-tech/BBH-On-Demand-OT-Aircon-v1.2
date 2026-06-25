@@ -111,8 +111,12 @@
   font-size:9px;font-weight:800;
   display:flex;align-items:center;justify-content:center;
   padding:0 4px;
-  animation:notif-pulse 1.4s ease-in-out infinite;
   border:2px solid var(--sidebar);
+  animation:badge-blink 1.2s ease-in-out infinite;
+}
+@keyframes badge-blink{
+  0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 var(--accent);}
+  50%{opacity:.4;transform:scale(.85);box-shadow:0 0 0 5px rgba(0,0,0,0);}
 }
 
 /* ===== COMPACT SIDEBAR ===== */
