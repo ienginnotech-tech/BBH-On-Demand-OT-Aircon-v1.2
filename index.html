@@ -1741,19 +1741,24 @@ let _badgeTimer = null;
 function startBadgeTimer(){
   if(_badgeTimer) clearInterval(_badgeTimer);
   _badgeTimer = setInterval(async()=>{
-    if(USE_LIVE_API && currentUser){
-      // reload data เบาๆ แล้วอัปเดต badge
-      try{
-        const res = await apiGET({action:'readOps'});
-        if(res.tenantReqs)      gData.tenantReqs      = dedup(res.tenantReqs);
-        if(res.buildingAssigns)  gData.buildingAssigns = dedup(res.buildingAssigns);
-        if(res.engWork)          gData.engWork         = dedup(res.engWork);
-        if(res.csReport)         gData.csReport        = dedup(res.csReport);
-        renderEngTable();
-        renderBuildingTable();
-        updateNavBadges();
-      }catch(e){}
-    }
+    if(!USE_LIVE_API || !currentUser) return;
+    try{
+      const res = await apiGET({action:'readOps'});
+      if(res.tenantReqs)      gData.tenantReqs      = dedup(res.tenantReqs);
+      if(res.buildingAssigns) gData.buildingAssigns  = dedup(res.buildingAssigns);
+      if(res.engWork)         gData.engWork          = dedup(res.engWork);
+      if(res.csReport)        gData.csReport         = dedup(res.csReport);
+      // re-render ทุกหน้าที่เกี่ยวข้อง
+      renderEngTable();
+      renderBuildingTable();
+      renderTenantTable();
+      renderCSTable();
+      // อัปเดต badge หลัง render เสมอ
+      setTimeout(updateNavBadges, 100);
+      // อัปเดต indicator CLS Report
+      const el = document.getElementById('cs-refresh-indicator');
+      if(el) el.textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    }catch(e){ console.warn('badge timer error:',e.message); }
   }, 30000);
 }
 
@@ -1782,24 +1787,8 @@ function goPage(id, navEl){
 
 let _csRefreshTimer = null;
 function startCSAutoRefresh(pageId){
-  // หยุด timer เก่าก่อนเสมอ
+  // รวมใน badge timer แล้ว ไม่ต้องสร้าง timer แยก
   if(_csRefreshTimer){ clearInterval(_csRefreshTimer); _csRefreshTimer=null; }
-  if(pageId !== 'cs' || !USE_LIVE_API) return;
-  _csRefreshTimer = setInterval(async()=>{
-    try{
-      const res = await apiGET({action:'readOps'});
-      // อัปเดตทุก dataset เพื่อให้ Reject/Status ถูกต้องทุกหน้า
-      if(res.csReport)        gData.csReport        = dedup(res.csReport);
-      if(res.engWork)         gData.engWork          = dedup(res.engWork);
-      if(res.buildingAssigns) gData.buildingAssigns  = dedup(res.buildingAssigns);
-      if(res.tenantReqs)      gData.tenantReqs       = dedup(res.tenantReqs);
-      renderCSTable();
-      renderEngTable();
-      updateNavBadges();
-      const el = document.getElementById('cs-refresh-indicator');
-      if(el){ el.textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
-    }catch(e){ console.warn('auto-refresh error:',e.message); }
-  }, 30000);
 }
 
 // ============================================================
@@ -3437,8 +3426,9 @@ function generateYADI() {
   // Filter เดือน POSTMONTH = เดือนเดียวกับ DATE ที่ Tenant แจ้ง (ตัด Rejected ออก)
   var filtered = csData.filter(function(r) {
     if (rejectMap[r['OT-AIR Work Request No.']]) return false; // ตัด Rejected
-    var startD = r['Start Date'] || r['Date'] || '';
-    var dObj = parseDate(startD);
+    // ใช้วันที่ปิดแอร์จริง เพื่อให้ billing ตรงกับเดือนที่ปิดงาน
+    var closeD = r['Close_OT-Air(Date)'] || r['Open_OT-Air(Date)'] || r['Start Date'] || r['Date'] || '';
+    var dObj = parseDate(closeD);
     if (!dObj || isNaN(dObj)) return false;
     var pm = new Date(dObj.getFullYear(), dObj.getMonth(), 1);
     return pm.getMonth() + 1 === month && pm.getFullYear() === year;
@@ -3480,7 +3470,8 @@ function generateYADI() {
     var tcode   = r['Code'] || '';
     var startD  = r['Start Date'] || r['Date'] || '';
     var bilDay  = billingMap[r['OT-AIR Work Request No.']] || '5';
-    var dates   = calcDates(startD, bilDay);
+    var closeD  = r['Close_OT-Air(Date)'] || r['Open_OT-Air(Date)'] || startD;
+    var dates   = calcDates(closeD, bilDay);
     var amount  = parseFloat(String(r['Total Cost OT.Air(Rate Charge+Area)_THB']||'0').replace(/,/g,'')) || 0;
     var openT   = r['Open_OT-Air(Time)'] || r['Start time'] || '';
     var closeT  = r['Close_OT-Air(Time)'] || r['Finish time'] || '';
@@ -3503,7 +3494,7 @@ function generateYADI() {
       PERSON: tcode,
       OFFSET: 'OTLOVE',
       AMONTH: amount.toFixed(2),
-      DATE: fmtDate(parseDate(tenantDateMap[r['OT-AIR Work Request No.']] || startD)), // #3 DATE = วันที่ Tenant แจ้งขอ OT
+      DATE: fmtDate(parseDate(r['Close_OT-Air(Date)'] || r['Open_OT-Air(Date)'] || startD)), // DATE = วันที่ปิดแอร์จริง
       POSTMONTH: dates.postMonth,
       FROMDATE: dates.fromDate,
       TODATE: dates.toDate,
