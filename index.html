@@ -1555,7 +1555,7 @@ let currentRole = null;
 let currentBuilding = null;
 let currentEngRow = null;
 let allRateCodes = [];
-let gData = {tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[]};
+let gData = {tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[],passwords:[]};
 let dbData = {staff:[],types:[],levels:[],rates:[],buildings:[],tenants:[]};
 let APPS_SCRIPT_URL = localStorage.getItem('bbh_api_url')||'https://script.google.com/macros/s/AKfycbxrR5B4UjyMyXQUR0wAt6h63oGPZZury23iUfj_DmOD9oILByVDXH5qvp0wZ6rsb-zA/exec';
 let USE_LIVE_API = APPS_SCRIPT_URL !== '';
@@ -2980,6 +2980,17 @@ async function editUserPass(id){const users=getRegisteredUsers();const u=users.f
 // ============================================================
 // SETTINGS
 // ============================================================
+function getPasswords(){
+  // ดึง password จาก gData.passwords ที่โหลดมาจาก Sheet
+  const result = {};
+  if(gData.passwords && gData.passwords.length){
+    gData.passwords.forEach(r => {
+      if(r['moduleKey'] && r['password']) result[r['moduleKey']] = r['password'];
+    });
+  }
+  return result;
+}
+
 function renderSettings(){
   // Password list
   const defaults=DEFAULT_PASSWORDS;
