@@ -1499,18 +1499,24 @@ let _sheetUsers = [];
 // ---- NAV CONFIG per role ----
 // helper badge functions
 const _badge = {
-  // Tenant ส่งคำขอมาแต่ CLS ยังไม่ Ack — นับจาก tenantReqs ที่ยังเป็น Pending
-  tenantPending: ()=> gData.tenantReqs.filter(r=> {
-    const ack = (r['Admin helpdesk (Acknowledge/Reject)']||'').trim();
-    return !ack || ack === 'Pending' || ack === '';
+  // นับเฉพาะที่ยังไม่ Acknowledge (ค่าต้องไม่ใช่ 'Acknowledge' หรือ 'Reject')
+  tenantPending: ()=> gData.buildingAssigns.filter(r=> {
+    const ack = (r['Admin helpdesk (Acknowledge/Reject)']||'').trim().toLowerCase();
+    const status = (r['Status']||'').trim();
+    return status === 'Current' && ack !== 'acknowledge' && ack !== 'reject';
   }).length,
-  // CLS: เหมือนกัน — คำขอจาก Tenant ที่รอ CLS Ack
   clsPending: ()=> gData.buildingAssigns.filter(r=> {
-    const ack = (r['Admin helpdesk (Acknowledge/Reject)']||'').trim();
-    return !ack || ack === 'Pending' || ack === '';
+    const ack = (r['Admin helpdesk (Acknowledge/Reject)']||'').trim().toLowerCase();
+    const status = (r['Status']||'').trim();
+    return status === 'Current' && ack !== 'acknowledge' && ack !== 'reject';
   }).length,
-  // Engineering: งานที่ Assign แล้วยังไม่ปิด
-  engPending: ()=> gData.engWork.filter(r=> r['Staff Name'] && !r['Close_OT-Air(Time)']).length,
+  // Engineering: งานที่ Assign แล้ว ยังไม่ปิด และไม่ถูก Reject/ยกเลิก
+  engPending: ()=> gData.engWork.filter(r=> {
+    const ack = (r['Engineering Action(Acknowledge/Reject)']||'').trim();
+    const closed = (r['Close_OT-Air(Time)']||'').trim();
+    const status = (r['Status']||'').trim();
+    return r['Staff Name'] && !closed && ack !== 'Reject' && status === 'Current';
+  }).length,
 };
 
 const NAV_CONFIG = {
