@@ -50,6 +50,70 @@
   --text:#fffbeb;--text2:#92794a;--text3:#3a3010;
   --orange:#f59e0b;--orange2:#fcd34d;
 }
+[data-theme="gray"]{
+  --bg:#18181b;--sidebar:#1f1f23;--sidebar2:#27272c;
+  --surface:#27272c;--surface2:#303036;
+  --border:rgba(120,120,140,.2);--border2:rgba(120,120,140,.35);
+  --accent:#00c896;--accent2:#00a87a;--accent-glow:rgba(0,200,150,.12);
+  --text:#e4e4e7;--text2:#a0a0ab;--text3:#52525b;
+  --orange:#f0a030;--orange2:#fcd34d;
+}
+[data-theme="blue"]{
+  --bg:#f0f4ff;--sidebar:#1a3461;--sidebar2:#234587;
+  --surface:#ffffff;--surface2:#eaf0ff;
+  --border:rgba(37,99,235,.2);--border2:rgba(37,99,235,.35);
+  --accent:#2563eb;--accent2:#1d4ed8;--accent-glow:rgba(37,99,235,.12);
+  --text:#0f172a;--text2:#1e40af;--text3:#64748b;
+  --rose:#dc2626;--amber:#d97706;--jade:#059669;
+  --orange:#d97706;--orange2:#fbbf24;
+}
+/* Blue theme: sidebar เข้ม ตัวหนังสือขาว */
+[data-theme="blue"] .sidebar,
+[data-theme="blue"] .sidebar *{color:#e8f0ff}
+[data-theme="blue"] .nav-item{color:#b8d0ff !important}
+[data-theme="blue"] .nav-item:hover{background:rgba(255,255,255,.1);color:#fff !important}
+[data-theme="blue"] .nav-item.active{background:rgba(255,255,255,.15);color:#fff !important}
+[data-theme="blue"] .nav-icon{color:#90b8ff !important}
+[data-theme="blue"] .nav-label{color:inherit !important}
+[data-theme="blue"] .sidebar-section{color:rgba(180,210,255,.6) !important}
+[data-theme="blue"] .brand-title{color:#fff !important}
+[data-theme="blue"] .brand-sub{color:#90b8ff !important}
+[data-theme="blue"] .user-name{color:#fff !important}
+[data-theme="blue"] .user-role{color:#90b8ff !important}
+[data-theme="blue"] .logout-btn{color:#b8d0ff !important}
+[data-theme="blue"] .logout-btn:hover{color:#fff !important}
+[data-theme="blue"] th{background:#1a3461;color:#fff}
+[data-theme="blue"] .tag{border-color:rgba(37,99,235,.3)}
+
+/* ===== NOTIFICATION BADGE ===== */
+.notif-dot{
+  position:absolute;top:6px;right:6px;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  font-size:9px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  animation:notif-pulse 1.4s ease-in-out infinite;
+  box-shadow:0 0 0 0 var(--accent);
+  border:2px solid var(--sidebar);
+  pointer-events:none;
+}
+.notif-dot.hidden{display:none}
+@keyframes notif-pulse{
+  0%{box-shadow:0 0 0 0 var(--accent-glow);}
+  70%{box-shadow:0 0 0 7px rgba(0,0,0,0);}
+  100%{box-shadow:0 0 0 0 rgba(0,0,0,0);}
+}
+.nav-item{position:relative}
+.nav-badge{
+  position:absolute;top:6px;right:8px;
+  min-width:18px;height:18px;border-radius:9px;
+  background:var(--accent);color:var(--bg);
+  font-size:9px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;
+  animation:notif-pulse 1.4s ease-in-out infinite;
+  border:2px solid var(--sidebar);
+}
 
 /* ===== COMPACT SIDEBAR ===== */
 .sidebar.compact .nav-item{position:relative;justify-content:center;padding:10px}
@@ -572,19 +636,42 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
 
 /* ===== MOBILE ===== */
 #sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90}
+/* Tablet 769–1024px */
+@media(min-width:769px) and (max-width:1024px){
+  .sidebar{width:200px}
+  .main{margin-left:200px}
+  .page{padding:16px 20px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .table-wrap{font-size:11px}
+  .btn{font-size:11px;padding:5px 10px}
+}
+/* Mobile ≤768px */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
+  .sidebar{transform:translateX(-100%);width:240px;z-index:1000}
   .sidebar.open{transform:translateX(0)}
   #sidebar-overlay.show{display:block}
   .main{margin-left:0}
   .hamburger{display:flex}
-  .page{padding:16px}
-  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .page{padding:12px}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px}
   .form-grid{grid-template-columns:1fr}
   .settings-grid{grid-template-columns:1fr}
   .settings-nav{border-right:none;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px;padding:8px}
   .settings-nav-item{flex:none;padding:6px 12px;font-size:11px}
   .theme-grid{grid-template-columns:repeat(3,1fr)}
+  .table-wrap{font-size:11px;overflow-x:auto}
+  .table-wrap table{min-width:600px}
+  .btn{font-size:11px;padding:5px 10px}
+  .modal-box{width:96vw;max-width:96vw;margin:8px auto;padding:16px}
+  .irow{grid-template-columns:1fr 1fr}
+  .page-header{flex-wrap:wrap;gap:8px}
+  h2{font-size:16px}
+}
+/* Small mobile ≤480px */
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .irow{grid-template-columns:1fr}
+  .hamburger-label{display:none}
 }
 </style>
 </head>
@@ -770,7 +857,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
               <div class="sh-title">🏢 แจ้งขอใช้ OT Air</div>
               <div class="sh-sub" id="tenant-bld-label">ส่งคำขอเปิดระบบปรับอากาศนอกเวลา</div>
             </div>
-            <button class="btn btn-p" onclick="openMod('mod-new-req')">＋ แจ้งขอใหม่</button>
+            <button class="btn btn-p" onclick="openNewReqModal()">＋ แจ้งขอ OT Air</button>
           </div>
           <div class="stats-grid">
             <div class="stat-card"><div class="stat-num" style="color:var(--accent)" id="ts-total">—</div><div class="stat-label">คำขอทั้งหมด</div><div class="stat-sub">เดือนนี้</div></div>
@@ -864,7 +951,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
         <div class="page" id="page-cs">
           <div class="sh">
             <div><div class="sh-title">📊 CS Summarize Report</div>
-            <div class="sh-sub">สรุปรายงาน OT Aircon — ทุกอาคาร</div></div>
+            <div class="sh-sub">สรุปรายงาน OT Aircon — ทุกอาคาร &nbsp;<span id="cs-refresh-indicator" style="font-size:10px;color:var(--text3);font-weight:400"></span></div></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <button class="btn btn-p btn-sm" onclick="globalRefresh()">🔄 โหลด</button>
               <button class="btn btn-o btn-sm" onclick="exportCSV()">⬇ CSV</button>
@@ -1026,6 +1113,16 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                       <div class="theme-name">Dark Gold</div>
                       <div class="theme-desc">Premium · Luxury</div>
                     </div>
+                    <div class="theme-card" id="tc-gray" onclick="setTheme('gray')">
+                      <div class="theme-swatch" style="background:linear-gradient(135deg,#18181b,#00c896)"></div>
+                      <div class="theme-name">Gray</div>
+                      <div class="theme-desc">สบายตา · Neutral</div>
+                    </div>
+                    <div class="theme-card" id="tc-blue" onclick="setTheme('blue')">
+                      <div class="theme-swatch" style="background:linear-gradient(135deg,#dbe4ff,#4f46e5)"></div>
+                      <div class="theme-name">Blue Light</div>
+                      <div class="theme-desc">กลางวัน · Office</div>
+                    </div>
                   </div>
                   <div style="margin-top:20px">
                     <div style="font-size:13px;font-weight:700;margin-bottom:8px">🌐 ภาษา / Language</div>
@@ -1167,46 +1264,90 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
 
 <!-- MODALS -->
 <div class="moverlay" id="mod-new-req">
-  <div class="mbox">
-    <div class="mtitle">➕ แจ้งขอ OT Air ใหม่ <button class="mclose" onclick="closeMod('mod-new-req')">✕</button></div>
+  <div class="mbox" style="max-width:560px">
+    <div class="mtitle">✈ แจ้งขอ OT Air <button class="mclose" onclick="closeMod('mod-new-req')">✕</button></div>
+
+    <!-- TAB SELECTOR -->
+    <div style="display:flex;gap:0;margin-bottom:18px;border:1px solid rgba(255,140,0,.2);border-radius:3px;overflow:hidden">
+      <button id="tab-daily" onclick="switchReqTab('daily')"
+        style="flex:1;padding:9px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;font-family:var(--font);transition:.15s;background:rgba(255,140,0,.15);color:var(--orange)">
+        📋 รายวัน (Single Day)
+      </button>
+      <button id="tab-monthly" onclick="switchReqTab('monthly')"
+        style="flex:1;padding:9px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border:none;cursor:pointer;font-family:var(--font);transition:.15s;background:transparent;color:var(--text2)">
+        📅 รายเดือน (Monthly)
+      </button>
+    </div>
+
+    <!-- SHARED FIELDS -->
     <div class="form-grid">
       <div class="fg"><label class="flabel">Building</label>
-        <select class="fselect" id="nr-bld" onchange="loadUnits();document.getElementById('nr-tenant-name').value='';">
+        <select class="fselect" id="nr-bld" onchange="loadUnits();loadMonthlyUnits();document.getElementById('nr-tenant-name').value='';">
           <option value="">— เลือก —</option><option>BTE</option><option>BTB</option><option>UBCII</option>
         </select></div>
       <div class="fg">
-        <label class="flabel">Space / Unit (พิมพ์เพื่อค้นหา)</label>
-        <input class="finput" id="nr-unit-search" type="text" 
-          placeholder="พิมพ์ชื่อบริษัท หรือ Unit เช่น 16-001"
-          oninput="filterUnitList()" autocomplete="off"
-          style="margin-bottom:4px">
-        <select class="fselect" id="nr-unit" size="5" onchange="fillTenantInfo()" 
-          style="height:auto;min-height:100px">
+        <label class="flabel">Space / Unit</label>
+        <input class="finput" id="nr-unit-search" type="text" placeholder="พิมพ์ชื่อบริษัท หรือ Unit"
+          oninput="filterUnitList();filterMonthlyUnitList()" autocomplete="off" style="margin-bottom:4px">
+        <select class="fselect" id="nr-unit" size="4" onchange="fillTenantInfo();fillMonthlyTenantInfo()" style="height:auto;min-height:80px">
           <option value="">— เลือก Building ก่อน —</option>
         </select>
-        <div id="nr-unit-count" style="font-size:10px;color:var(--text3);margin-top:2px"></div>
       </div>
       <div class="fg full"><label class="flabel">Tenant Name</label>
-        <input class="finput" id="nr-tenant-name" type="text" 
-          placeholder="— เลือก Unit ก่อน —" readonly 
-          style="color:var(--accent);background:var(--surface2)"></div>
+        <input class="finput" id="nr-tenant-name" type="text" readonly style="color:var(--accent);background:var(--surface2)"></div>
       <div class="fg full"><label class="flabel">ประเภท OT Air</label>
         <select class="fselect" id="nr-type">
           <option>🔵 ระบบปรับอากาศนอกเวลา</option>
           <option>🔵 ระบบปรับอากาศ-น้ำเย็นเท่านั้น</option>
           <option>🔵 ระบบปรับอากาศ-น้ำระบายความร้อนเท่านั้น</option>
         </select></div>
-      <div class="fg"><label class="flabel">วันที่ต้องการ</label><input class="finput" type="date" id="nr-date"></div>
-      <div class="fg"><label class="flabel">เวลาเริ่ม</label><input class="finput" type="time" id="nr-start"></div>
-      <div class="fg"><label class="flabel">เวลาสิ้นสุด</label><input class="finput" type="time" id="nr-end"></div>
-      <div class="fg"><label class="flabel">ผู้แจ้ง</label><input class="finput" type="text" id="nr-name" placeholder="ชื่อ-นามสกุล"></div>
-      <div class="fg"><label class="flabel">โทรศัพท์</label><input class="finput" type="tel" id="nr-tel" placeholder="0XX-XXX-XXXX"></div>
-      <div class="fg full"><label class="flabel">หมายเหตุ</label><textarea class="ftextarea" id="nr-remark"></textarea></div>
     </div>
-    <div class="frow">
-      <button class="btn btn-p" onclick="submitRequest()">📤 ส่งคำขอ</button>
-      <button class="btn btn-o" onclick="closeMod('mod-new-req')">ยกเลิก</button>
+
+    <!-- TAB: DAILY -->
+    <div id="tab-panel-daily">
+      <div class="form-grid" style="margin-top:12px">
+        <div class="fg"><label class="flabel">วันที่ต้องการ</label><input class="finput" type="date" id="nr-date"></div>
+        <div class="fg"><label class="flabel">เวลาเริ่ม</label><input class="finput" type="time" id="nr-start"></div>
+        <div class="fg"><label class="flabel">เวลาสิ้นสุด</label><input class="finput" type="time" id="nr-end"></div>
+        <div class="fg"><label class="flabel">ผู้แจ้ง</label><input class="finput" type="text" id="nr-name" placeholder="ชื่อ-นามสกุล"></div>
+        <div class="fg"><label class="flabel">โทรศัพท์</label><input class="finput" type="tel" id="nr-tel" placeholder="0XX-XXX-XXXX"></div>
+        <div class="fg full"><label class="flabel">หมายเหตุ</label><textarea class="ftextarea" id="nr-remark"></textarea></div>
+      </div>
+      <div class="frow">
+        <button class="btn btn-p" onclick="submitRequest()">📤 ส่งคำขอ</button>
+        <button class="btn btn-o" onclick="closeMod('mod-new-req')">ยกเลิก</button>
+      </div>
     </div>
+
+    <!-- TAB: MONTHLY -->
+    <div id="tab-panel-monthly" style="display:none">
+      <div style="font-size:10px;color:var(--accent);margin:12px 0 10px;padding:7px 12px;background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.15);border-radius:3px">
+        ⚡ คำนวณชั่วโมงรวมอัตโนมัติ = (วันสิ้นสุด − วันเริ่ม + 1) × ชั่วโมงต่อวัน
+      </div>
+      <div class="form-grid">
+        <div class="fg"><label class="flabel">วันที่เริ่ม</label><input class="finput" type="date" id="mn-start-date" onchange="calcMonthlyHours()"></div>
+        <div class="fg"><label class="flabel">วันที่สิ้นสุด</label><input class="finput" type="date" id="mn-end-date" onchange="calcMonthlyHours()"></div>
+        <div class="fg"><label class="flabel">เวลาเริ่ม</label><input class="finput" type="time" id="mn-start-time" value="20:00" onchange="calcMonthlyHours()"></div>
+        <div class="fg"><label class="flabel">เวลาสิ้นสุด</label><input class="finput" type="time" id="mn-end-time" value="00:00" onchange="calcMonthlyHours()"></div>
+        <div class="fg"><label class="flabel">ผู้แจ้ง</label><input class="finput" type="text" id="mn-name" placeholder="ชื่อ-นามสกุล"></div>
+        <div class="fg"><label class="flabel">โทรศัพท์</label><input class="finput" type="tel" id="mn-tel" placeholder="0XX-XXX-XXXX"></div>
+        <div class="fg full"><label class="flabel">หมายเหตุ</label><textarea class="ftextarea" id="mn-remark"></textarea></div>
+      </div>
+      <!-- Summary -->
+      <div id="mn-summary" style="display:none;margin:12px 0;padding:12px 16px;background:rgba(0,200,100,.05);border:1px solid rgba(0,200,100,.2);border-radius:3px">
+        <div style="font-size:9px;color:var(--text2);margin-bottom:8px;letter-spacing:1.5px;text-transform:uppercase">สรุปคำขอ Monthly OT</div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap">
+          <div><div style="font-size:9px;color:var(--text2)">จำนวนวัน</div><div id="mn-days" style="font-size:22px;font-weight:700;color:var(--accent)">—</div></div>
+          <div><div style="font-size:9px;color:var(--text2)">ชม./วัน</div><div id="mn-hrs-day" style="font-size:22px;font-weight:700;color:var(--green)">—</div></div>
+          <div><div style="font-size:9px;color:var(--text2)">ชม.รวมทั้งหมด</div><div id="mn-hrs-total" style="font-size:22px;font-weight:700;color:var(--orange)">—</div></div>
+        </div>
+      </div>
+      <div class="frow">
+        <button class="btn btn-p" onclick="submitMonthlyRequest()">📅 ส่งคำขอ Monthly</button>
+        <button class="btn btn-o" onclick="closeMod('mod-new-req')">ยกเลิก</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1214,7 +1355,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
   <div class="mbox">
     <div class="mtitle">👷 มอบหมายงานช่าง <button class="mclose" onclick="closeMod('mod-assign')">✕</button></div>
     <div class="form-grid">
-      <div class="fg"><label class="flabel">เลขที่คำขอ</label><select class="fselect" id="as-req"></select></div>
+      <div class="fg"><label class="flabel">เลขที่คำขอ</label><input class="finput" id="as-req" type="text" readonly style="color:var(--accent);background:var(--surface2);cursor:default"></div>
       <div class="fg"><label class="flabel">ช่าง</label><select class="fselect" id="as-staff"><option>A</option><option>B</option><option>C</option></select></div>
       <div class="fg"><label class="flabel">Shift</label><select class="fselect" id="as-shift"><option>Day</option><option>Afternoon</option><option>Night</option></select></div>
       <div class="fg"><label class="flabel">Tenant_Level Charge</label><select class="fselect" id="as-level" onchange="filterAssignRateCodes()">
@@ -1356,18 +1497,34 @@ let _sheetPasswords = {};
 let _sheetUsers = [];
 
 // ---- NAV CONFIG per role ----
+// helper badge functions
+const _badge = {
+  // Tenant ส่งคำขอมาแต่ CLS ยังไม่ Ack — นับจาก tenantReqs ที่ยังเป็น Pending
+  tenantPending: ()=> gData.tenantReqs.filter(r=> {
+    const ack = (r['Admin helpdesk (Acknowledge/Reject)']||'').trim();
+    return !ack || ack === 'Pending' || ack === '';
+  }).length,
+  // CLS: เหมือนกัน — คำขอจาก Tenant ที่รอ CLS Ack
+  clsPending: ()=> gData.buildingAssigns.filter(r=> {
+    const ack = (r['Admin helpdesk (Acknowledge/Reject)']||'').trim();
+    return !ack || ack === 'Pending' || ack === '';
+  }).length,
+  // Engineering: งานที่ Assign แล้วยังไม่ปิด
+  engPending: ()=> gData.engWork.filter(r=> r['Staff Name'] && !r['Close_OT-Air(Time)']).length,
+};
+
 const NAV_CONFIG = {
   // Tenant: เห็นแค่ OT Request
   tenant:   [{id:'tenant',   icon:'🏢', label:'OT Request',   badge:()=>gData.tenantReqs.filter(r=>getStatus(r)==='pending').length}],
-  // Building: เห็น Assign งาน + Database
-  building: [{id:'building', icon:'🏗️', label:'CLS Assign',  badge:()=>gData.buildingAssigns.filter(r=>!r['Admin helpdesk (Acknowledge/Reject)']).length},
+  // Building/CLS: badge = คำขอที่ยังไม่ Ack
+  building: [{id:'building', icon:'🏗️', label:'CLS Assign',  badge:()=>_badge.clsPending()},
              {id:'db',       icon:'🗄️', label:'Database',      badge:()=>0}],
-  // Engineering: เห็นแค่งาน OT
-  eng:      [{id:'eng',      icon:'🔧', label:'งาน OT',        badge:()=>gData.engWork.filter(r=>r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)']).length}],
-  // CS: เห็นทุกหน้าของ operation ยกเว้น Users/Settings
-  cs:       [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>0},
-             {id:'building', icon:'🏗️', label:'CLS',      badge:()=>0},
-             {id:'eng',      icon:'🔧', label:'Engineering',   badge:()=>0},
+  // Engineering: badge = งานที่ยังไม่ปิด
+  eng:      [{id:'eng',      icon:'🔧', label:'งาน OT',        badge:()=>_badge.engPending()}],
+  // CS: เห็นทุกหน้า พร้อม badge แต่ละหน้า
+  cs:       [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending()},
+             {id:'building', icon:'🏗️', label:'CLS',           badge:()=>_badge.clsPending()},
+             {id:'eng',      icon:'🔧', label:'Engineering',    badge:()=>_badge.engPending()},
              {id:'cs',       icon:'📊', label:'CLS Report',     badge:()=>0},
              {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0},
              {id:'db',       icon:'🗄️', label:'Database',      badge:()=>0}],
@@ -1552,6 +1709,43 @@ function buildSidebar(){
 
   // Go to first page
   goPage(navItems[0].id);
+  updateNavBadges();
+  startBadgeTimer();
+}
+
+function updateNavBadges(){
+  // อัปเดต badge ทุก nav-item โดยไม่ re-render ทั้ง sidebar
+  const role = currentRole;
+  const navItems = NAV_CONFIG[role]||NAV_CONFIG.cs;
+  document.querySelectorAll('#sidebar-nav .nav-item').forEach((el,i)=>{
+    if(!navItems[i]) return;
+    const count = navItems[i].badge ? navItems[i].badge() : 0;
+    let badge = el.querySelector('.nav-badge');
+    if(count > 0){
+      if(!badge){ badge=document.createElement('span'); badge.className='nav-badge'; el.appendChild(badge); }
+      badge.textContent = count > 99 ? '99+' : count;
+    } else {
+      if(badge) badge.remove();
+    }
+  });
+}
+
+// Auto-refresh badge ทุก 30 วินาที
+let _badgeTimer = null;
+function startBadgeTimer(){
+  if(_badgeTimer) clearInterval(_badgeTimer);
+  _badgeTimer = setInterval(async()=>{
+    if(USE_LIVE_API && currentUser){
+      // reload data เบาๆ แล้วอัปเดต badge
+      try{
+        const res = await apiGET({action:'readOps'});
+        if(res.tenantReqs)   gData.tenantReqs      = dedup(res.tenantReqs);
+        if(res.buildingAssigns) gData.buildingAssigns = dedup(res.buildingAssigns);
+        if(res.engWork)      gData.engWork          = dedup(res.engWork);
+        updateNavBadges();
+      }catch(e){}
+    }
+  }, 30000);
 }
 
 function goPage(id, navEl){
@@ -1569,10 +1763,30 @@ function goPage(id, navEl){
 
   // Lazy load
   if(id==='db' && !dbData.staff.length) loadAllDB();
-  
   if(id==='users') renderUserManagement();
   if(id==='settings') renderSettings();
   closeSidebar();
+  updateNavBadges();
+  // auto-refresh CLS Report เมื่อเข้าหน้า
+  startCSAutoRefresh(id);
+}
+
+let _csRefreshTimer = null;
+function startCSAutoRefresh(pageId){
+  // หยุด timer เก่าก่อนเสมอ
+  if(_csRefreshTimer){ clearInterval(_csRefreshTimer); _csRefreshTimer=null; }
+  if(pageId !== 'cs' || !USE_LIVE_API) return;
+  _csRefreshTimer = setInterval(async()=>{
+    try{
+      const res = await apiGET({action:'readOps'});
+      if(res.csReport) gData.csReport = dedup(res.csReport);
+      renderCSTable();
+      updateNavBadges();
+      // แสดง indicator เล็กๆ ว่า refresh แล้ว
+      const el = document.getElementById('cs-refresh-indicator');
+      if(el){ el.textContent='🔄 อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+    }catch(e){ console.warn('CS auto-refresh error:',e.message); }
+  }, 30000);
 }
 
 // ============================================================
@@ -1777,20 +1991,27 @@ function renderTenantTable(){
   const data = filterByBuilding(gData.tenantReqs);
   const wrap = document.getElementById('tenant-table-wrap'); if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ยังไม่มีคำขอ OT Air');return;}
-  wrap.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>เลขที่</th><th>วันที่</th><th>อาคาร</th><th>ประเภท</th><th>บริษัท</th><th>Space</th><th>เวลา</th><th>สถานะ</th><th></th></tr></thead>
-    <tbody>${data.map((r,i)=>`<tr>
-      <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
-      <td style="color:var(--text2);font-size:11px">${fmtDate(r['Date'])}</td>
-      <td>${bldTag(r['Building'])}</td>
-      <td>${typeTag(r['Type_OT-AIR'])}</td>
-      <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Name']||'—'}</td>
-      <td><strong>${r['Space']||'—'}</strong></td>
-      <td style="font-size:12px;white-space:nowrap">${r['Start time']||'—'} – ${r['Finish time']||'—'}</td>
-      <td>${statusTag(getStatus(r))}</td>
-      <td><button class="btn btn-o btn-sm" onclick="showDetail(${i},'tenant')">ดู</button></td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
+  const mBadge = '<span style="display:inline-block;margin-left:4px;padding:1px 5px;font-size:9px;font-weight:700;letter-spacing:.5px;border-radius:3px;background:rgba(0,180,255,.15);color:#00b4ff;border:1px solid rgba(0,180,255,.3);vertical-align:middle">📅 MONTHLY</span>';
+  wrap.innerHTML='<div class="table-wrap"><table>'
+    +'<thead><tr><th>เลขที่</th><th>วันที่</th><th>อาคาร</th><th>ประเภท</th><th>บริษัท</th><th>Space</th><th>เวลา</th><th>สถานะ</th><th></th></tr></thead>'
+    +'<tbody>'+data.map((r,i)=>{
+      const isM = !!(r['Monthly_End_Date'] || r['isMonthly'] || (r['Remark']||'').startsWith('[MONTHLY'));
+      const badge = isM ? mBadge : '';
+      const dateCell = (isM && r['Monthly_End_Date'])
+        ? '<span style="color:var(--text2);font-size:11px">'+fmtDate(r['Date'])+'<br><span style="color:var(--text3);font-size:10px">ถึง '+fmtDate(r['Monthly_End_Date'])+'</span></span>'
+        : '<span style="color:var(--text2);font-size:11px">'+fmtDate(r['Date'])+'</span>';
+      return '<tr>'
+        +'<td><strong style="color:var(--accent)">'+(r['OT-AIR Work Request No.']||'—')+'</strong>'+badge+'</td>'
+        +'<td>'+dateCell+'</td>'
+        +'<td>'+bldTag(r['Building'])+'</td>'
+        +'<td>'+typeTag(r['Type_OT-AIR'])+'</td>'
+        +'<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r['Name']||'—')+'</td>'
+        +'<td><strong>'+(r['Space']||'—')+'</strong></td>'
+        +'<td style="font-size:12px;white-space:nowrap">'+(r['Start time']||'—')+' – '+(r['Finish time']||'—')+'</td>'
+        +'<td>'+statusTag(getStatus(r))+'</td>'
+        +'<td><button class="btn btn-o btn-sm" onclick="showDetail('+i+',\'tenant\')">ดู</button></td>'
+        +'</tr>';
+    }).join('')+'</tbody></table></div>';
 }
 
 function renderBuildingTable(){
@@ -1808,10 +2029,11 @@ function renderBuildingRows(data, wrap){
       const isRejected = ack==='Reject';
       const isAcked = ack==='Acknowledge' || ack==='Acknowledde';
       // ปุ่ม Ack (แสดงเฉพาะถ้ายังไม่ Ack และไม่ Reject)
-      const ackBtn = (!ack||isRejected) && !isAcked ? `<button class="btn btn-g btn-sm" onclick="doAck(${i})">✓ Ack</button>` : '';
+      const _no=encodeURIComponent(r['OT-AIR Work Request No.']||'');
+      const ackBtn = (!ack||isRejected) && !isAcked ? `<button class="btn btn-g btn-sm" onclick="doAckByNo('${_no}')">✓ Ack</button>` : '';
       // ปุ่ม Reject — แสดงทุกแถวที่ยังไม่ Reject
-      const rejBtn = !isRejected ? `<button class="btn btn-r btn-sm" onclick="doReject(${i})" title="แจ้งซ้ำ/ยกเลิก">✕ Reject</button>` : `<button class="btn btn-g btn-sm" onclick="doAck(${i})" title="ยกเลิก Reject">↩ Restore</button>`;
-      const actions=`<div style="display:flex;gap:3px;flex-wrap:wrap">${ackBtn}${rejBtn}${!isRejected?`<button class="btn btn-p btn-sm" onclick="doAssign(${i})">${r['Staff Name']?'✏️ แก้ไข':'👷 มอบหมาย'}</button>`:''}<button class="btn btn-o btn-sm" onclick="showDetail(${i},'building')">ดู</button></div>`;
+      const rejBtn = !isRejected ? `<button class="btn btn-r btn-sm" onclick="doRejectByNo('${_no}')" title="แจ้งซ้ำ/ยกเลิก">✕ Reject</button>` : `<button class="btn btn-g btn-sm" onclick="doAckByNo('${_no}')" title="ยกเลิก Reject">↩ Restore</button>`;
+      const actions=`<div style="display:flex;gap:3px;flex-wrap:wrap">${ackBtn}${rejBtn}${!isRejected?`<button class="btn btn-p btn-sm" onclick="doAssignByNo('${_no}')">${r['Staff Name']?'✏️ แก้ไข':'👷 มอบหมาย'}</button>`:''}<button class="btn btn-o btn-sm" onclick="showDetail(${i},'building')">ดู</button></div>`;
       // style แถว Rejected
       const rowStyle = isRejected ? 'opacity:.55;background:rgba(248,81,73,.04)' : '';
       const adminTag = isRejected
@@ -1820,7 +2042,7 @@ function renderBuildingRows(data, wrap){
           ? `<span class="tag t-green">✓ Acknowledge</span>`
           : `<span class="tag t-amber">⏳ รอ</span>`;
       return `<tr style="${rowStyle}">
-        <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong></td>
+        <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong>${monthlyBadgeFor(r)}</td>
         <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Name']||'—'}</td>
         <td>${bldTag(r['Building'])}</td>
         <td><strong>${r['Space']||'—'}</strong></td>
@@ -1876,17 +2098,20 @@ function renderEngRows(data, wrap){
         action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button>`;
       } else if(isOpen){
         stTag=`<span class="tag t-amber">⚙ กำลังเปิด</span>`;
-        action=`<button class="btn btn-r btn-sm" onclick="engAction(${i},'close')">■ ปิด</button>`;
+        const _eno2=encodeURIComponent(r['OT-AIR Work Request No.']||'');
+        action=`<button class="btn btn-r btn-sm" onclick="engActionByNo('${_eno2}','close')">■ ปิด</button>`;
       } else if(isAck){
         stTag=`<span class="tag t-purple">✓ Ack — รอเปิด</span>`;
-        action=`<button class="btn btn-g btn-sm" onclick="engAction(${i},'open')">▶ เปิด</button>`;
+        const _eno3=encodeURIComponent(r['OT-AIR Work Request No.']||'');
+        action=`<button class="btn btn-g btn-sm" onclick="engActionByNo('${_eno3}','open')">▶ เปิด</button>`;
       } else {
         stTag=`<span class="tag t-gray">รอ Acknowledge</span>`;
-        action=`<button class="btn btn-g btn-sm" onclick="doEngAck(${i})">✓ Ack</button><button class="btn btn-r btn-sm" style="margin-left:3px" onclick="doEngReject(${i})">✕</button>`;
+        const _eno=encodeURIComponent(r['OT-AIR Work Request No.']||'');
+        action=`<button class="btn btn-g btn-sm" onclick="doEngAckByNo('${_eno}')">✓ Ack</button><button class="btn btn-r btn-sm" style="margin-left:3px" onclick="doEngRejectByNo('${_eno}')">✕</button>`;
       }
       const rowStyle=isRejected?'opacity:.5;background:rgba(248,81,73,.04)':'';
       return `<tr style="${rowStyle}">
-        <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong></td>
+        <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong>${monthlyBadgeFor(r)}</td>
         <td>${bldTag(r['Building'])}</td>
         <td><strong>${r['Space']||'—'}</strong></td>
         <td style="font-size:11px;white-space:nowrap">${r['Start time']||'—'}–${r['Finish time']||'—'}</td>
@@ -1923,20 +2148,49 @@ function renderCSTable(){
 function renderCSRows(data, wrap){
   if(!wrap) return;
   if(!data.length){wrap.innerHTML=emptyState('ไม่มีข้อมูล');return;}
-  wrap.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>เลขที่</th><th>Tenant</th><th>Bld</th><th>Space</th><th>Rate Code</th><th>ชั่วโมง</th><th>พื้นที่</th><th>ขั้นต่ำ</th><th>Area Charge</th><th>รวม (฿)</th></tr></thead>
-    <tbody>${data.map((r,i)=>`<tr style="cursor:pointer" onclick="showCSDetail(${i})">
-      <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong></td>
+  const rows = data.map((r,i)=>{
+    const isM = !!(r['Monthly_Total_Hours'] || (r['Remark']||'').startsWith('[MONTHLY'));
+    const rawHrs = parseFloat(r['Convers time(hour)']||0);
+    let mHrs = parseFloat(r['Monthly_Total_Hours']||0);
+    if(!mHrs && isM) mHrs = parseMonthlyHours(r['Remark']||'');
+    const hrs = (isM && mHrs > 0) ? mHrs : rawHrs;
+    const hrsDisp = hrs.toFixed(2)+' ชม.';
+    let minCharge  = parseFloat(String(r['Cal_Cost Minimum charge(THB)']||'0').replace(/,/g,''))||0;
+    let areaCharge = parseFloat(String(r['Cal_ Cost Area charge OT-AIR(THB)']||'0').replace(/,/g,''))||0;
+    let total      = parseFloat(String(r['Total Cost OT.Air(Rate Charge+Area)_THB']||'0').replace(/,/g,''))||0;
+    if(isM && mHrs > 0){
+      const rc = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates).find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
+      if(rc){
+        const hrRate = parseFloat(rc['Addtional charge(THB/Hour)']||0);
+        const mRate  = parseFloat(rc['Addtional charge(THB/Month)']||0);
+        const aRate  = parseFloat(rc['Charge per Area(THB/M2)']||0);
+        const area   = parseFloat(r['Cal_Rent Area(SQ.M)']||r['Area']||0);
+        minCharge    = parseFloat(rc['Minimum charge(THB)']||0);
+        // Monthly: Area charge = rate/m² × area × total hours
+        if(aRate > 0)       areaCharge = aRate * area * mHrs;
+        else if(hrRate > 0) areaCharge = hrRate * mHrs;
+        else if(mRate > 0)  areaCharge = mRate;
+        else                areaCharge = 0;
+        total = Math.max(minCharge, areaCharge);
+      }
+    }
+    const rowBg = isM ? 'background:rgba(0,180,255,.04)' : '';
+    return `<tr style="cursor:pointer;${rowBg}" onclick="showCSDetail(${i})">
+      <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong>${monthlyBadgeFor(r)}</td>
       <td style="font-size:11px">${r['Name']||'—'}</td>
       <td>${bldTag(r['Building'])}</td>
       <td><strong>${r['Space']||'—'}</strong></td>
       <td style="font-size:10px;color:var(--accent)">${(r['Code OT Air_Fee']||r['Code OT Air']||'—').replace('XXXCH_OT_AIR_','')}</td>
-      <td>${parseFloat(r['Convers time(hour)']||0).toFixed(2)} ชม.</td>
+      <td style="color:${isM?'#00b4ff':'inherit'}">${hrsDisp}</td>
       <td>${r['Cal_Rent Area(SQ.M)']||'—'} m²</td>
-      <td style="color:var(--amber)">฿${num(r['Cal_Cost Minimum charge(THB)'])}</td>
-      <td style="color:var(--accent)">฿${num(r['Cal_ Cost Area charge OT-AIR(THB)'])}</td>
-      <td><strong style="color:var(--text)">฿${num(r['Total Cost OT.Air(Rate Charge+Area)_THB'])}</strong></td>
-    </tr>`).join('')}</tbody>
+      <td style="color:var(--amber)">฿${num(minCharge)}</td>
+      <td style="color:var(--accent)">฿${num(areaCharge)}</td>
+      <td><strong style="color:var(--text)">฿${num(total)}</strong></td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML=`<div class="table-wrap"><table>
+    <thead><tr><th>เลขที่</th><th>Tenant</th><th>Bld</th><th>Space</th><th>Rate Code</th><th>ชั่วโมง</th><th>พื้นที่</th><th>ขั้นต่ำ</th><th>Area Charge</th><th>รวม (฿)</th></tr></thead>
+    <tbody>${rows}</tbody>
   </table></div><div style="font-size:10px;color:var(--text3);padding:8px 12px">คลิกแถวเพื่อดูรายละเอียด</div>`;
 }
 
@@ -1970,6 +2224,25 @@ function renderRateTable(data){
 // ============================================================
 // ACTIONS: CLS
 // ============================================================
+// === ByNo wrappers — ใช้ reqNo แทน index เพื่อป้องกัน filtered-index mismatch ===
+function doAckByNo(noEnc){
+  const no=decodeURIComponent(noEnc);
+  const i=gData.buildingAssigns.findIndex(r=>r['OT-AIR Work Request No.']===no);
+  if(i<0){toast('⚠️ ไม่พบคำขอ '+no);return;}
+  doAck(i);
+}
+function doRejectByNo(noEnc){
+  const no=decodeURIComponent(noEnc);
+  const i=gData.buildingAssigns.findIndex(r=>r['OT-AIR Work Request No.']===no);
+  if(i<0){toast('⚠️ ไม่พบคำขอ '+no);return;}
+  doReject(i);
+}
+function doAssignByNo(noEnc){
+  const no=decodeURIComponent(noEnc);
+  const i=gData.buildingAssigns.findIndex(r=>r['OT-AIR Work Request No.']===no);
+  if(i<0){toast('⚠️ ไม่พบคำขอ '+no);return;}
+  doAssign(i);
+}
 async function doAck(i){
   const r=gData.buildingAssigns[i]; if(!r)return;
   const no=r['OT-AIR Work Request No.'];
@@ -2002,11 +2275,10 @@ async function doReject(i){
 }
 function doAssign(i){
   const r=gData.buildingAssigns[i]; if(!r)return;
-  // Populate request dropdown
+  // ล็อคเลขคำขอ — ใช้ input readonly ไม่ให้ user เปลี่ยน
   const sel=document.getElementById('as-req');
-  sel.innerHTML='<option value="">— เลือก —</option>'+
-    gData.buildingAssigns.map(row=>`<option value="${row['OT-AIR Work Request No.']}">${row['OT-AIR Work Request No.']} (${(row['Name']||'').substring(0,25)})</option>`).join('');
-  sel.value=r['OT-AIR Work Request No.'];
+  sel.value=r['OT-AIR Work Request No.']||'';
+  sel.dataset.idx=i;
 
   // Populate Rate Code — กรองตาม Building
   const bld = r['Building'] || '';
@@ -2052,9 +2324,13 @@ function filterAssignRateCodes(){
     rates.map(rc=>`<option value="${rc['Code OT Air']}">${rc['Code OT Air']} — ${(rc['Description']||'').substring(0,40)}</option>`).join('');
 }
 async function submitAssign(){
-  const req=v('as-req'),staff=v('as-staff'),shift=v('as-shift'),code=v('as-code'),ack=v('as-ack'),billing=v('as-billing');
+  const reqEl=document.getElementById('as-req');
+  const req=reqEl?reqEl.value.trim():'';
+  const staff=v('as-staff'),shift=v('as-shift'),code=v('as-code'),ack=v('as-ack'),billing=v('as-billing');
   if(!req||!staff){toast('⚠️ กรุณากรอกข้อมูลให้ครบ');return;}
-  const idx=gData.buildingAssigns.findIndex(r=>r['OT-AIR Work Request No.']==='req');
+  // ใช้ index จาก dataset ที่ set ตอน doAssign (ไม่ต้อง findIndex อีก)
+  const preIdx = reqEl&&reqEl.dataset.idx!==undefined ? parseInt(reqEl.dataset.idx) : -1;
+  const idx = preIdx>=0 ? preIdx : gData.buildingAssigns.findIndex(r=>r['OT-AIR Work Request No.']===req);
   if(idx>=0){
     gData.buildingAssigns[idx]['Staff Name']=staff;
     gData.buildingAssigns[idx]['Shift']=shift;
@@ -2062,7 +2338,7 @@ async function submitAssign(){
     gData.buildingAssigns[idx]['Admin helpdesk (Acknowledge/Reject)']=ack;
     gData.buildingAssigns[idx]['Billing Date Period']=billing;
     gData.buildingAssigns[idx]['Manager Consider(Approved/Waiting/Reject)']='Waiting';
-    const eIdx=gData.engWork.findIndex(r=>r['OT-AIR Work Request No.']==='req');
+    const eIdx=gData.engWork.findIndex(r=>r['OT-AIR Work Request No.']===req);
     if(eIdx>=0){gData.engWork[eIdx]['Staff Name']=staff;gData.engWork[eIdx]['Shift']=shift;gData.engWork[eIdx]['Code OT Air']=code;}
   }
   if(USE_LIVE_API) await apiGET({action:'assign',data:encodeURIComponent(JSON.stringify({reqNo:req,staffName:staff,shift,codeOtAir:code,billingDatePeriod:billing}))});
@@ -2089,6 +2365,24 @@ async function doApprove(i,decision){
 // ============================================================
 // ACTIONS: ENGINEERING
 // ============================================================
+function doEngAckByNo(noEnc){
+  const no=decodeURIComponent(noEnc);
+  const i=gData.engWork.findIndex(r=>r['OT-AIR Work Request No.']=== no);
+  if(i<0){toast('⚠️ ไม่พบคำขอ '+no);return;}
+  doEngAck(i);
+}
+function doEngRejectByNo(noEnc){
+  const no=decodeURIComponent(noEnc);
+  const i=gData.engWork.findIndex(r=>r['OT-AIR Work Request No.']=== no);
+  if(i<0){toast('⚠️ ไม่พบคำขอ '+no);return;}
+  doEngReject(i);
+}
+function engActionByNo(noEnc,type){
+  const no=decodeURIComponent(noEnc);
+  const i=gData.engWork.findIndex(r=>r['OT-AIR Work Request No.']=== no);
+  if(i<0){toast('⚠️ ไม่พบคำขอ '+no);return;}
+  engAction(i,type);
+}
 async function doEngAck(i){
   const r=gData.engWork[i]; if(!r)return;
   const no=r['OT-AIR Work Request No.'];
@@ -2169,12 +2463,16 @@ function filterUnitList(){
         (u.space||'').toLowerCase().includes(q) ||
         (u.name||'').toLowerCase().includes(q))
     : _loadedUnits;
-  sel.innerHTML = '<option value="">— เลือก Unit —</option>' +
-    filtered.map(u =>
+  sel.innerHTML = filtered.map(u =>
       `<option value="${u.space}" data-name="${u.name}" data-area="${u.area}" data-code="${u.code}">`+
       `${u.space} — ${(u.name||'').substring(0,35)} (${u.area||'?'} m²)</option>`
     ).join('');
   if(countEl) countEl.textContent = filtered.length + ' รายการ' + (q ? ' (กรองจาก '+_loadedUnits.length+')' : '');
+  // auto-select แถวแรก เมื่อมีผลลัพธ์
+  if(sel.options.length > 0){
+    sel.selectedIndex = 0;
+    fillTenantInfo();
+  }
 }
 
 function fillTenantInfo(){
@@ -2192,6 +2490,114 @@ function fillTenantInfo(){
   } else {
     nameEl.value='';
   }
+}
+
+
+
+function openNewReqModal(){
+  openMod('mod-new-req');
+  switchReqTab('daily'); // default รายวัน
+}
+
+function switchReqTab(tab){
+  const isDaily = tab === 'daily';
+  // panel visibility
+  document.getElementById('tab-panel-daily').style.display = isDaily ? '' : 'none';
+  document.getElementById('tab-panel-monthly').style.display = isDaily ? 'none' : '';
+  // tab button styles
+  const td = document.getElementById('tab-daily');
+  const tm = document.getElementById('tab-monthly');
+  if(td){ td.style.background = isDaily ? 'rgba(255,140,0,.15)' : 'transparent';
+          td.style.color = isDaily ? 'var(--orange)' : 'var(--text2)'; }
+  if(tm){ tm.style.background = !isDaily ? 'rgba(255,140,0,.15)' : 'transparent';
+          tm.style.color = !isDaily ? 'var(--orange)' : 'var(--text2)'; }
+}
+
+
+// ============================================================
+// MONTHLY OT REQUEST
+// ============================================================
+function loadMonthlyUnits(){
+  // shared elements กับ Daily tab — ไม่ต้องทำซ้ำ
+  loadUnits();
+}
+
+function filterMonthlyUnitList(){
+  // shared elements กับ Daily tab — ไม่ต้องทำซ้ำ
+  filterUnitList();
+}
+
+function fillMonthlyTenantInfo(){
+  const bld = v('nr-bld'), unit = v('nr-unit');
+  const t = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit);
+  const el = document.getElementById('nr-tenant-name');
+  if(el) el.value = t ? (t['Name']||'') : '';
+}
+
+function calcMonthlyHours(){
+  const sd = document.getElementById('mn-start-date').value;
+  const ed = document.getElementById('mn-end-date').value;
+  const st = v('mn-start-time') || '20:00';
+  const et = v('mn-end-time') || '00:00';
+  const sumEl = document.getElementById('mn-summary');
+  if(!sd || !ed){ if(sumEl) sumEl.style.display='none'; return; }
+  const d1 = new Date(sd), d2 = new Date(ed);
+  if(d2 < d1){ toast('⚠️ วันสิ้นสุดต้องหลังวันเริ่ม'); if(sumEl) sumEl.style.display='none'; return; }
+  const days = Math.round((d2 - d1) / 86400000) + 1;
+  const hrsDay = ((timeToMin(et) - timeToMin(st) + 1440) % 1440) / 60;
+  const hrsTotal = days * hrsDay;
+  if(sumEl) sumEl.style.display = 'block';
+  se('mn-days', days + ' วัน');
+  se('mn-hrs-day', hrsDay.toFixed(1) + ' ชม.');
+  se('mn-hrs-total', hrsTotal.toFixed(1) + ' ชม.');
+}
+
+async function submitMonthlyRequest(){
+  // shared fields อยู่ใน mod-new-req
+  const bld=v('nr-bld'), unit=v('nr-unit'), type=v('nr-type');
+  const sd=v('mn-start-date'), ed=v('mn-end-date');
+  const st=v('mn-start-time'), et=v('mn-end-time');
+  const name=v('mn-name'), tel=v('mn-tel'), remark=v('mn-remark');
+  if(!bld||!unit||!sd||!ed||!st||!et||!name){toast('⚠️ กรุณากรอกข้อมูลให้ครบ');return;}
+  const d1=new Date(sd), d2=new Date(ed);
+  if(d2<d1){toast('⚠️ วันสิ้นสุดต้องหลังวันเริ่ม');return;}
+  const days = Math.round((d2-d1)/86400000)+1;
+  const hrsDay = ((timeToMin(et)-timeToMin(st)+1440)%1440)/60;
+  const hrsTotal = (days * hrsDay).toFixed(2);
+  const tenantInfo = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
+  const remarkFull = `[MONTHLY ${sd} ถึง ${ed} | ${days} วัน × ${hrsDay.toFixed(1)} ชม. = ${hrsTotal} ชม.รวม]${remark?' '+remark:''}`;
+  const sb = document.querySelector('#tab-panel-monthly .btn-p');
+  if(sb){sb.disabled=true; sb.textContent='⏳ กำลังบันทึก...';}
+  if(USE_LIVE_API){
+    toast('⏳ กำลังบันทึก Monthly OT...');
+    const res = await apiGET({action:'submitRequest', data:encodeURIComponent(JSON.stringify({
+      building:bld, space:unit, type, date:sd,
+      startTime:st, endTime:et,
+      endDate:ed, totalDays:days, totalHours:hrsTotal,
+      requester:name, tel, remark:remarkFull,
+      tenantCode:tenantInfo['Code']||'',
+      tenantName:tenantInfo['Name']||'',
+      area:tenantInfo['Area']||'',
+      isMonthly:true,
+    }))});
+    if(sb){sb.disabled=false; sb.textContent='📤 ส่งคำขอ Monthly';}
+    if(res){
+      closeMod('mod-new-req');
+      toast('✅ บันทึก Monthly OT '+res.reqNo+' — '+days+' วัน / '+hrsTotal+' ชม.รวม');
+      setTimeout(async()=>{gData={tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[]};await loadAllLive();renderAllModules();},1500);
+      return;
+    }
+  }
+  // Local fallback
+  const _now=new Date();
+  const _ym=_now.getFullYear()+String(_now.getMonth()+1).padStart(2,'0');
+  const _prefix='OT_AIR'+_ym;
+  const _cnt=gData.tenantReqs.filter(r=>(r['OT-AIR Work Request No.']||'').startsWith(_prefix)).length;
+  const reqNo=_prefix+String(_cnt+1).padStart(3,'0');
+  gData.tenantReqs.push({'OT-AIR Work Request No.':reqNo,'Date':sd,'Type_OT-AIR':type,'Building':bld,'Space':unit,'Name':tenantInfo['Name']||'','Start time':st,'Finish time':et,'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remarkFull,'Monthly_End_Date':ed,'Monthly_Total_Days':days,'Monthly_Total_Hours':hrsTotal});
+  if(sb){sb.disabled=false; sb.textContent='📅 ส่งคำขอ Monthly';}
+  renderAllModules(); closeMod('mod-new-req');
+  toast('✅ บันทึก Monthly OT '+reqNo+' — '+days+' วัน / '+hrsTotal+' ชม.รวม (Local)');
 }
 
 async function submitRequest(){
@@ -2291,6 +2697,31 @@ function showDetail(i,type){
 
 function showCSDetail(i){
   const r=filterByBuilding(gData.csReport)[i]; if(!r)return;
+  // Monthly override — ใช้ logic เดียวกับ renderCSRows
+  const isM = !!(r['Monthly_Total_Hours'] || (r['Remark']||'').startsWith('[MONTHLY'));
+  const rawHrs = parseFloat(r['Convers time(hour)']||0);
+  let mHrs = parseFloat(r['Monthly_Total_Hours']||0);
+  if(!mHrs && isM) mHrs = parseMonthlyHours ? parseMonthlyHours(r['Remark']||'') : 0;
+  const hrs = (isM && mHrs > 0) ? mHrs : rawHrs;
+  const hrsLabel = hrs.toFixed(2) + ' ชม.' + (isM ? ' [Monthly]' : '');
+  let minCharge  = parseFloat(String(r['Cal_Cost Minimum charge(THB)']||'0').replace(/,/g,''))||0;
+  let areaCharge = parseFloat(String(r['Cal_ Cost Area charge OT-AIR(THB)']||'0').replace(/,/g,''))||0;
+  let total      = parseFloat(String(r['Total Cost OT.Air(Rate Charge+Area)_THB']||'0').replace(/,/g,''))||0;
+  if(isM && mHrs > 0){
+    const rc = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates).find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
+    if(rc){
+      const hrRate = parseFloat(rc['Addtional charge(THB/Hour)']||0);
+      const mRate  = parseFloat(rc['Addtional charge(THB/Month)']||0);
+      const aRate  = parseFloat(rc['Charge per Area(THB/M2)']||0);
+      const area   = parseFloat(r['Cal_Rent Area(SQ.M)']||r['Area']||0);
+      minCharge    = parseFloat(rc['Minimum charge(THB)']||0);
+      if(aRate > 0)       areaCharge = aRate * area * mHrs;
+      else if(hrRate > 0) areaCharge = hrRate * mHrs;
+      else if(mRate > 0)  areaCharge = mRate;
+      else                areaCharge = 0;
+      total = Math.max(minCharge, areaCharge);
+    }
+  }
   document.getElementById('detail-title').firstChild.textContent='🧾 รายละเอียดการคำนวณ ';
   document.getElementById('detail-content').innerHTML=`
     <div class="irow" style="margin-bottom:12px">
@@ -2298,17 +2729,17 @@ function showCSDetail(i){
       <div><span>Tenant</span><strong style="font-size:11px">${r['Name']||'—'}</strong></div>
       <div><span>Building</span><strong>${r['Building']||'—'}</strong></div>
       <div><span>Space</span><strong>${r['Space']||'—'}</strong></div>
-      <div><span>พื้นที่</span><strong>${r['Area']||'—'} m²</strong></div>
+      <div><span>พื้นที่</span><strong>${r['Cal_Rent Area(SQ.M)']||r['Area']||'—'} m²</strong></div>
       <div><span>Rate Code</span><strong style="font-size:9px">${r['Code OT Air_Fee']||r['Code OT Air']||'—'}</strong></div>
     </div>
     <div class="calcbox">
       <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">🧮 การคำนวณ</div>
       <div class="calc-row"><span>เวลาเริ่ม → สิ้นสุด</span><span>${r['Start time']||'—'} – ${r['Finish time']||'—'}</span></div>
-      <div class="calc-row"><span>รวมเวลา (ชั่วโมง)</span><span>${r['Convers time(hour)']||'—'} ชม.</span></div>
+      <div class="calc-row"><span>รวมเวลา (ชั่วโมง)</span><span style="color:${isM?'#00b4ff':'inherit'}">${hrsLabel}</span></div>
       <div class="calc-row"><span>พื้นที่เช่าจริง</span><span>${r['Cal_Rent Area(SQ.M)']||'—'} m²</span></div>
-      <div class="calc-row"><span>ขั้นต่ำ</span><span>฿${num(r['Cal_Cost Minimum charge(THB)'])}</span></div>
-      <div class="calc-row"><span>Area Charge</span><span>฿${num(r['Cal_ Cost Area charge OT-AIR(THB)'])}</span></div>
-      <div class="calc-row total"><span>รวมทั้งหมด</span><span>฿${num(r['Total Cost OT.Air(Rate Charge+Area)_THB'])}</span></div>
+      <div class="calc-row"><span>ขั้นต่ำ</span><span>฿${num(minCharge)}</span></div>
+      <div class="calc-row"><span>Area Charge</span><span>฿${num(areaCharge)}</span></div>
+      <div class="calc-row total"><span>รวมทั้งหมด</span><span>฿${num(total)}</span></div>
     </div>
     <div style="margin-top:12px;font-size:11px;color:var(--text2);background:var(--surface2);border-radius:8px;padding:10px;border-left:3px solid var(--amber)">
       หากพบรายการใดไม่ถูกต้อง กรุณาทักท้วงภายใน 7 วัน
@@ -2578,7 +3009,8 @@ function setTheme(theme){
   localStorage.setItem('dbh_theme',theme);
   document.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('tc-'+theme)?.classList.add('selected');
-  toast('🎨 เปลี่ยน Theme เป็น '+theme);
+  const names={navy:'Dark Navy',green:'Dark Green',gold:'Dark Gold',gray:'Gray (สบายตา)',blue:'Blue Light'};
+  toast('🎨 Theme: '+(names[theme]||theme));
 }
 
 // Tooltip element สำหรับ compact sidebar
@@ -2760,9 +3192,7 @@ async function loadUnits(){
 }
 
 function populateAssignDropdown(){
-  const sel=document.getElementById('as-req'); if(!sel)return;
-  sel.innerHTML='<option value="">— เลือก —</option>'+
-    gData.buildingAssigns.map(r=>`<option value="${r['OT-AIR Work Request No.']}">${r['OT-AIR Work Request No.']} (${(r['Name']||'').substring(0,20)})</option>`).join('');
+  // as-req เป็น readonly input แล้ว ไม่ต้อง populate dropdown
 }
 
 function populateRateDropdown(data){
@@ -2834,6 +3264,13 @@ function typeTag(t){
   return`<span class="tag t-gray">🔵 ${t}</span>`;
 }
 
+function parseMonthlyHours(remark){
+  try{const m=String(remark||'').match(/=\s*([\d.]+)\s*ชม\.รวม/);if(m)return parseFloat(m[1])||0;}catch(e){}return 0;
+}
+function monthlyBadgeFor(r){
+  const isM = !!(r['Monthly_End_Date'] || r['isMonthly'] || (r['Remark']||'').startsWith('[MONTHLY'));
+  return isM ? '<span style="display:inline-block;margin-left:4px;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.5px;border-radius:3px;background:rgba(0,180,255,.15);color:#00b4ff;border:1px solid rgba(0,180,255,.3);vertical-align:middle">M</span>' : '';
+}
 function bldTag(b){
   const m={BTE:'t-blue',BTB:'t-navy',UBCII:'t-amber'};
   return b?`<span class="tag ${m[b]||'t-gray'}">${b}</span>`:'—';
