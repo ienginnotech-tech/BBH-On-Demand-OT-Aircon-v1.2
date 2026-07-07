@@ -1270,20 +1270,10 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
     <!-- SHARED FIELDS -->
     <div class="form-grid">
       <div class="fg"><label class="flabel">Building</label>
-        <select class="fselect" id="nr-bld" onchange="loadUnits();loadMonthlyUnits();document.getElementById('nr-tenant-name').value='';">
+        <select class="fselect" id="nr-bld" onchange="loadUnits();loadMonthlyUnits();">
           <option value="">— เลือก —</option><option>BTE</option><option>BTB</option><option>UBCII</option>
         </select></div>
-      <div class="fg">
-        <label class="flabel">Space / Unit</label>
-        <input class="finput" id="nr-unit-search" type="text" placeholder="พิมพ์ชื่อบริษัท หรือ Unit"
-          oninput="filterUnitList();filterMonthlyUnitList()" autocomplete="off" style="margin-bottom:4px">
-        <select class="fselect" id="nr-unit" size="4" onchange="fillTenantInfo();fillMonthlyTenantInfo()" style="height:auto;min-height:80px">
-          <option value="">— เลือก Building ก่อน —</option>
-        </select>
-      </div>
-      <div class="fg full"><label class="flabel">Tenant Name</label>
-        <input class="finput" id="nr-tenant-name" type="text" readonly style="color:var(--accent);background:var(--surface2)"></div>
-      <div class="fg full"><label class="flabel">ประเภท OT Air</label>
+      <div class="fg"><label class="flabel">ประเภท OT Air</label>
         <select class="fselect" id="nr-type">
           <option>🔵 ระบบปรับอากาศนอกเวลา</option>
           <option>🔵 ระบบปรับอากาศ-น้ำเย็นเท่านั้น</option>
@@ -1291,12 +1281,27 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
         </select></div>
     </div>
 
+    <!-- MULTI-UNIT SECTION -->
+    <div style="margin:10px 0 6px;display:flex;align-items:center;justify-content:space-between">
+      <label class="flabel" style="margin:0">Space / Unit <span style="color:var(--text3);font-size:10px">(เพิ่มได้สูงสุด 5 Unit)</span></label>
+      <button class="btn btn-g btn-sm" onclick="addUnitRow()" id="btn-add-unit">+ เพิ่ม Unit</button>
+    </div>
+    <!-- โหมดเวลา -->
+    <div style="display:flex;gap:8px;margin-bottom:8px;font-size:11px">
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--accent)">
+        <input type="radio" name="time-mode" value="same" checked onchange="setTimeMode('same')"> เวลาเดียวกันทุก Unit
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2)">
+        <input type="radio" name="time-mode" value="diff" onchange="setTimeMode('diff')"> แยกเวลาคนละ Unit
+      </label>
+    </div>
+    <!-- Unit rows container -->
+    <div id="unit-rows-wrap"></div>
+
     <!-- TAB: DAILY -->
     <div id="tab-panel-daily">
-      <div class="form-grid" style="margin-top:12px">
+      <div class="form-grid" style="margin-top:10px">
         <div class="fg"><label class="flabel">วันที่ต้องการ</label><input class="finput" type="date" id="nr-date"></div>
-        <div class="fg"><label class="flabel">เวลาเริ่ม</label><input class="finput" type="time" id="nr-start"></div>
-        <div class="fg"><label class="flabel">เวลาสิ้นสุด</label><input class="finput" type="time" id="nr-end"></div>
         <div class="fg"><label class="flabel">ผู้แจ้ง</label><input class="finput" type="text" id="nr-name" placeholder="ชื่อ-นามสกุล"></div>
         <div class="fg"><label class="flabel">โทรศัพท์</label><input class="finput" type="tel" id="nr-tel" placeholder="0XX-XXX-XXXX"></div>
         <div class="fg full"><label class="flabel">หมายเหตุ</label><textarea class="ftextarea" id="nr-remark"></textarea></div>
@@ -2557,6 +2562,7 @@ function fillTenantInfo(){
 function openNewReqModal(){
   openMod('mod-new-req');
   switchReqTab('daily'); // default รายวัน
+  setTimeout(()=>initUnitRows(), 100); // init unit rows
 }
 
 function switchReqTab(tab){
@@ -2660,48 +2666,203 @@ async function submitMonthlyRequest(){
   toast('✅ บันทึก Monthly OT '+reqNo+' — '+days+' วัน / '+hrsTotal+' ชม.รวม (Local)');
 }
 
+// ============================================================
+// MULTI-UNIT REQUEST
+// ============================================================
+let _unitRows = 1; // จำนวน unit row ปัจจุบัน
+let _timeMode = 'same'; // 'same' หรือ 'diff'
+
+function setTimeMode(mode){
+  _timeMode = mode;
+  renderUnitRows();
+}
+
+function initUnitRows(){
+  _unitRows = 1;
+  _timeMode = 'same';
+  document.querySelectorAll('input[name="time-mode"]').forEach(r => r.value === 'same' ? r.checked=true : r.checked=false);
+  renderUnitRows();
+}
+
+function addUnitRow(){
+  if(_unitRows >= 5){ toast('เพิ่มได้สูงสุด 5 Unit'); return; }
+  _unitRows++;
+  renderUnitRows();
+}
+
+function removeUnitRow(idx){
+  if(_unitRows <= 1) return;
+  _unitRows--;
+  renderUnitRows();
+  // ลบ data ของ row นั้น
+}
+
+function renderUnitRows(){
+  const wrap = document.getElementById('unit-rows-wrap');
+  if(!wrap) return;
+  const bld = document.getElementById('nr-bld')?.value || '';
+  // โหลด units สำหรับ dropdown
+  const units = allUnitsList || [];
+  const filteredUnits = bld ? units.filter(u => u.building === bld || !u.building) : units;
+  const unitOptions = filteredUnits.length
+    ? filteredUnits.map(u => `<option value="${u.unit||u.Space||u.code||''}">${u.unit||u.Space||u.code||''} — ${(u.name||u.Name||'').substring(0,30)}</option>`).join('')
+    : '<option value="">— เลือก Building ก่อน —</option>';
+
+  let rows = '';
+  for(let i=0; i<_unitRows; i++){
+    const showTime = _timeMode === 'diff' || i === 0;
+    const timeFields = `
+      <div class="fg"><label class="flabel" style="font-size:10px">เวลาเริ่ม</label>
+        <input class="finput" type="time" id="ur-start-${i}" value="20:00"></div>
+      <div class="fg"><label class="flabel" style="font-size:10px">เวลาสิ้นสุด</label>
+        <input class="finput" type="time" id="ur-end-${i}" value="00:00"></div>`;
+
+    rows += `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:700;color:var(--accent)">Unit ${i+1}</span>
+        ${i>0?`<button class="btn btn-r btn-sm" onclick="removeUnitRow(${i})" style="padding:2px 8px;font-size:10px">✕ ลบ</button>`:''}
+      </div>
+      <div class="form-grid" style="gap:8px">
+        <div class="fg"><label class="flabel" style="font-size:10px">Space / Unit</label>
+          <input class="finput" id="ur-search-${i}" type="text" placeholder="พิมพ์เพื่อค้นหา..." 
+            oninput="filterUnitRowList(${i})" style="margin-bottom:3px;font-size:12px">
+          <select class="fselect" id="ur-unit-${i}" size="3" style="height:auto;min-height:60px;font-size:12px"
+            onchange="fillUnitRowTenant(${i})">
+            ${unitOptions}
+          </select>
+        </div>
+        <div class="fg"><label class="flabel" style="font-size:10px">Tenant</label>
+          <input class="finput" id="ur-tenant-${i}" type="text" readonly 
+            style="color:var(--accent);background:var(--surface);font-size:11px">
+          ${_timeMode==='diff' ? timeFields : (i===0 ? timeFields : '')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ถ้า same mode — แสดงเวลาร่วมด้านล่าง
+  const sharedTime = _timeMode === 'same' ? `
+    <div class="form-grid" style="margin-bottom:8px;padding:8px 10px;background:rgba(0,200,150,.05);border:1px solid rgba(0,200,150,.15);border-radius:6px">
+      <div style="grid-column:1/-1;font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px">⏰ เวลาร่วมสำหรับทุก Unit</div>
+      <div class="fg"><label class="flabel" style="font-size:10px">เวลาเริ่ม</label>
+        <input class="finput" type="time" id="ur-start-shared" value="20:00"></div>
+      <div class="fg"><label class="flabel" style="font-size:10px">เวลาสิ้นสุด</label>
+        <input class="finput" type="time" id="ur-end-shared" value="00:00"></div>
+    </div>` : '';
+
+  wrap.innerHTML = sharedTime + rows;
+
+  // อัปเดตปุ่ม add
+  const btn = document.getElementById('btn-add-unit');
+  if(btn) btn.disabled = _unitRows >= 5;
+}
+
+function filterUnitRowList(idx){
+  const q = (document.getElementById(`ur-search-${idx}`)?.value || '').toLowerCase();
+  const sel = document.getElementById(`ur-unit-${idx}`);
+  if(!sel) return;
+  const bld = document.getElementById('nr-bld')?.value || '';
+  const units = (allUnitsList||[]).filter(u => !bld || u.building===bld || !u.building);
+  const filtered = q ? units.filter(u => 
+    (u.unit||u.Space||u.code||'').toLowerCase().includes(q) ||
+    (u.name||u.Name||'').toLowerCase().includes(q)
+  ) : units;
+  sel.innerHTML = filtered.length
+    ? filtered.map(u=>`<option value="${u.unit||u.Space||u.code||''}">${u.unit||u.Space||u.code||''} — ${(u.name||u.Name||'').substring(0,25)}</option>`).join('')
+    : '<option value="">ไม่พบ</option>';
+}
+
+function fillUnitRowTenant(idx){
+  const sel = document.getElementById(`ur-unit-${idx}`);
+  const ten = document.getElementById(`ur-tenant-${idx}`);
+  if(!sel || !ten) return;
+  const unit = sel.value;
+  const bld = document.getElementById('nr-bld')?.value || '';
+  const found = (allUnitsList||[]).find(u => (u.unit||u.Space||u.code||'')===unit && (!bld||u.building===bld||!u.building));
+  ten.value = found ? (found.name||found.Name||unit) : unit;
+}
+
+function getUnitRowsData(){
+  // รวบรวมข้อมูลจากทุก row
+  const rows = [];
+  for(let i=0; i<_unitRows; i++){
+    const unit   = document.getElementById(`ur-unit-${i}`)?.value || '';
+    const tenant = document.getElementById(`ur-tenant-${i}`)?.value || '';
+    const start  = _timeMode==='same'
+      ? (document.getElementById('ur-start-shared')?.value || '')
+      : (document.getElementById(`ur-start-${i}`)?.value || '');
+    const end    = _timeMode==='same'
+      ? (document.getElementById('ur-end-shared')?.value || '')
+      : (document.getElementById(`ur-end-${i}`)?.value || '');
+    if(unit) rows.push({unit, tenant, start, end});
+  }
+  return rows;
+}
+
 async function submitRequest(){
   if(_submitting){toast('⚠️ กำลังบันทึกอยู่...');return;}
+  const bld=v('nr-bld'),type=v('nr-type'),date=v('nr-date'),
+        name=v('nr-name'),tel=v('nr-tel'),remark=v('nr-remark');
+
+  // รวบรวม unit rows
+  const unitRows = getUnitRowsData();
+  if(!bld){toast('⚠️ กรุณาเลือก Building');return;}
+  if(!unitRows.length){toast('⚠️ กรุณาเลือกอย่างน้อย 1 Unit');return;}
+  if(unitRows.some(r=>!r.start||!r.end)){toast('⚠️ กรุณากรอกเวลาให้ครบ');return;}
+  if(!date){toast('⚠️ กรุณาเลือกวันที่');return;}
+  if(!name){toast('⚠️ กรุณากรอกชื่อผู้แจ้ง');return;}
+
   _submitting=true;
   const sb=document.querySelector('#mod-new-req .btn-p');
   if(sb){sb.disabled=true;sb.textContent='⏳ กำลังบันทึก...';}
-  const bld=v('nr-bld'),unit=v('nr-unit'),type=v('nr-type'),
-        date=v('nr-date'),start=v('nr-start'),end=v('nr-end'),
-        name=v('nr-name'),tel=v('nr-tel'),remark=v('nr-remark');
-  if(!bld||!unit||!date||!start||!end||!name){toast('⚠️ กรุณากรอกข้อมูลให้ครบ');return;}
-  // ดึง Tenant Info จาก dropdown ที่เลือก
-  const sel=document.getElementById('nr-unit');
-  const opt=sel?sel.options[sel.selectedIndex]:null;
-  // ดึงจาก Tenants list อย่างเดียว
-  const tenantInfo=(EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit&&t['Name'])||{};
-  const tenantNameDisplay=document.getElementById('nr-tenant-name')?document.getElementById('nr-tenant-name').value:'';
-  if(USE_LIVE_API){
-    toast('⏳ กำลังบันทึก...');
-    const res=await apiGET({action:'submitRequest',data:encodeURIComponent(JSON.stringify({
-      building:bld,space:unit,type,date,startTime:start,endTime:end,
-      requester:name,tel,remark,
-      tenantCode:tenantInfo['Code']||tenantInfo['Tenant_Code']||'',
-      tenantName:tenantInfo['Name']||'',area:tenantInfo['Area']||'',
-    }))});
-    if(res){
-      _submitting=false; if(sb){sb.disabled=false;sb.textContent='📤 ส่งคำขอ';}
-      closeMod('mod-new-req');
-      toast('✅ บันทึก '+res.reqNo+' ลง Google Sheets');
-      setTimeout(async()=>{gData={tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[]};await loadAllLive();renderAllModules();},1500);
-      return;
+
+  const savedNos = [];
+  let hasError = false;
+
+  for(const row of unitRows){
+    const unit = row.unit;
+    const start = row.start;
+    const end = row.end;
+    const tenantInfo=(EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
+
+    if(USE_LIVE_API){
+      try{
+        const res=await apiGET({action:'submitRequest',data:encodeURIComponent(JSON.stringify({
+          building:bld,space:unit,type,date,startTime:start,endTime:end,
+          requester:name,tel,remark,
+          tenantCode:tenantInfo['Code']||tenantInfo['Tenant_Code']||'',
+          tenantName:tenantInfo['Name']||row.tenant||'',area:tenantInfo['Area']||'',
+        }))});
+        if(res && res.reqNo) savedNos.push(res.reqNo);
+        else hasError=true;
+      }catch(e){ hasError=true; }
+    } else {
+      // local fallback
+      const _now=new Date();
+      const _ym=_now.getFullYear()+String(_now.getMonth()+1).padStart(2,'0');
+      const _prefix='OT_AIR'+_ym;
+      const _cnt=gData.tenantReqs.filter(r=>(r['OT-AIR Work Request No.']||'').startsWith(_prefix)).length;
+      const reqNo=_prefix+String(_cnt+1).padStart(3,'0');
+      const rec={'OT-AIR Work Request No.':reqNo,'Date':nowStr(),'Type_OT-AIR':type,'Building':bld,'Space':unit,
+        'Name':tenantInfo['Name']||row.tenant||'','Start time':start,'Finish time':end,
+        'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remark};
+      gData.tenantReqs.push(rec);
+      gData.buildingAssigns.push(rec);
+      gData.engWork.push(rec);
+      savedNos.push(reqNo);
     }
-    _submitting=false; if(sb){sb.disabled=false;sb.textContent='📤 ส่งคำขอ';}
   }
-  // reqNo = OT_AIR + ปีเดือน + ลำดับในเดือน 3 หลัก (local fallback)
-  const _now=new Date();
-  const _ym=_now.getFullYear()+String(_now.getMonth()+1).padStart(2,'0');
-  const _prefix='OT_AIR'+_ym;
-  const _cnt=gData.tenantReqs.filter(r=>(r['OT-AIR Work Request No.']||'').startsWith(_prefix)).length;
-  const reqNo=_prefix+String(_cnt+1).padStart(3,'0');
-  gData.tenantReqs.push({'OT-AIR Work Request No.':reqNo,'Date':nowStr(),'Type_OT-AIR':type,'Building':bld,'Space':unit,'Name':tenantInfo['Name']||'','Start time':start,'Finish time':end,'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remark});
-  gData.buildingAssigns.push(gData.tenantReqs[gData.tenantReqs.length-1]);
-  gData.engWork.push(gData.tenantReqs[gData.tenantReqs.length-1]);
-  renderAllModules(); closeMod('mod-new-req'); toast('✅ บันทึก '+reqNo+' (Local)');
+
+  _submitting=false;
+  if(sb){sb.disabled=false;sb.textContent='📤 ส่งคำขอ';}
+  closeMod('mod-new-req');
+  initUnitRows(); // reset unit rows
+
+  if(savedNos.length){
+    toast(`✅ บันทึก ${savedNos.length} คำขอ: ${savedNos.join(', ')}`);
+    setTimeout(async()=>{gData={tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[],passwords:[]};await loadAllLive();renderAllModules();},1500);
+  }
+  if(hasError) toast('⚠️ บางรายการบันทึกไม่สำเร็จ กรุณาตรวจสอบ');
 }
 
 // ============================================================
