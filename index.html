@@ -1618,9 +1618,16 @@ function doLogin(){
 
   // 1. เช็คใน Users sheet (registered users) ก่อน
   const approvedUsers = getRegisteredUsers().filter(u=>u.status==='approved');
-  const pendingUsers  = getRegisteredUsers().filter(u=>u.status==='pending');
-  const regUser = approvedUsers.find(u=>(u.username||u.name||'').toLowerCase()===username.toLowerCase() && u.password===pass);
-  const pendingUser = !regUser && pendingUsers.find(u=>(u.username||u.name||'').toLowerCase()===username.toLowerCase());
+  const pendingUsers2  = getRegisteredUsers().filter(u=>u.status==='pending');
+  // username ค้นหาจาก: username field, name field, หรือ moduleKey prefix
+  const findUser = (arr) => arr.find(u => {
+    const uname = (u.username||u.name||'').toLowerCase();
+    const mkFirst = (u.moduleKey||'').split('-')[0].toLowerCase();
+    return uname === username.toLowerCase() || mkFirst === username.toLowerCase();
+  });
+  const regUser = findUser(approvedUsers)?.password === pass ? findUser(approvedUsers) :
+    approvedUsers.find(u=>(u.username||u.name||'').toLowerCase()===username.toLowerCase() && u.password===pass);
+  const pendingUser = !regUser && findUser(pendingUsers2);
 
   if(pendingUser){
     showAuthErr('login-err','บัญชีนี้รอการอนุมัติจาก Admin');
@@ -1640,10 +1647,13 @@ function doLogin(){
 
   if(regUser){
     // ใช้ข้อมูลจาก Users sheet
-    const rawRegRole = regUser.role || 'tenant';
-    // map building → cs สำหรับ registered users เก่า
-    currentRole     = rawRegRole === 'building' ? 'cs' : rawRegRole;
-    currentBuilding = regUser.building || (regUser.moduleKey||'').split('-')[1] || 'ALL';
+    // parse role และ building จาก moduleKey เสมอ (Sheet ไม่มี column role/building แยก)
+    const mk = (regUser.moduleKey || regUser.role || 'tenant-ALL');
+    const mkParts = mk.split('-');
+    const rawRegRole = regUser.role || mkParts[0] || 'tenant';
+    // map building/cs → cs
+    currentRole     = (rawRegRole === 'building') ? 'cs' : rawRegRole;
+    currentBuilding = regUser.building || mkParts.slice(1).join('-') || 'ALL';
     currentUser     = regUser.name || username;
   } else {
     // built-in account (moduleKey format) — map เก่าให้ตรง
