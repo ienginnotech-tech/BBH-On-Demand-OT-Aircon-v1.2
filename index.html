@@ -698,31 +698,10 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
   <div class="auth-box">
     <div class="auth-err" id="login-err"></div>
 
-    <label class="auth-label">Module / อาคาร</label>
-    <select class="auth-select" id="login-module">
-      <option value="">— เลือก Module —</option>
-      <optgroup label="🏢 Tenant">
-        <option value="tenant-BTE">Tenant — BTE</option>
-        <option value="tenant-BTB">Tenant — BTB</option>
-        <option value="tenant-UBCII">Tenant — UBCII</option>
-      </optgroup>
-      <optgroup label="🏗️ CLS">
-        <option value="building-BTE">CLS — BTE</option>
-        <option value="building-BTB">CLS — BTB</option>
-        <option value="building-UBCII">CLS — UBCII</option>
-      </optgroup>
-      <optgroup label="🔧 Engineering">
-        <option value="eng-BTE">Engineering — BTE</option>
-        <option value="eng-BTB">Engineering — BTB</option>
-        <option value="eng-UBCII">Engineering — UBCII</option>
-      </optgroup>
-      <optgroup label="📊 CLS / Admin">
-        <option value="cs">CLS Admin</option>
-        <option value="admin">Admin System</option>
-      </optgroup>
-    </select>
+    <label class="auth-label">Username</label>
+    <input class="auth-input" id="login-user" type="text" placeholder="ชื่อผู้ใช้" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
 
-    <label class="auth-label">Password / Access Key</label>
+    <label class="auth-label" style="margin-top:12px">Password</label>
     <div class="auth-pass-wrap">
       <input class="auth-input" id="login-pass" type="password" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')doLogin()">
       <button class="auth-pass-toggle" type="button" onclick="togglePass('login-pass',this)" title="แสดง/ซ่อน Password">
@@ -730,13 +709,9 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
       </button>
     </div>
 
-    <button class="auth-btn" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <button class="auth-btn" onclick="doLogin()" style="margin-top:16px">เข้าสู่ระบบ</button>
     <div class="auth-divider">หรือ</div>
     <button class="auth-btn secondary" onclick="showScreen('register')">ลงทะเบียนผู้ใช้ใหม่</button>
-
-    <div style="text-align:center;margin-top:16px;font-size:10px;color:rgba(255,255,255,.15)">
-      Demo: tenant-BTE=bte123 | cs=cs@admin | admin=admin999
-    </div>
   </div>
 
   <!-- FOOTER -->
@@ -756,6 +731,10 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
     <div class="auth-err" id="reg-err"></div>
     <div class="form-grid" style="gap:10px">
       <div class="fg">
+        <label class="auth-label">Username *</label>
+        <input class="auth-input" id="reg-username" type="text" placeholder="ชื่อผู้ใช้สำหรับ Login" style="margin:0">
+      </div>
+      <div class="fg">
         <label class="auth-label">ชื่อ-นามสกุล *</label>
         <input class="auth-input" id="reg-name" type="text" placeholder="Full Name" style="margin:0">
       </div>
@@ -772,19 +751,22 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
         <input class="auth-input" id="reg-tel" type="tel" placeholder="0XX-XXX-XXXX" style="margin:0">
       </div>
       <div class="fg">
-        <label class="auth-label">อาคาร *</label>
-        <select class="auth-select" id="reg-bld" style="margin:0">
-          <option value="">— เลือกอาคาร —</option>
-          <option>BTE</option><option>BTB</option><option>UBCII</option>
+        <label class="auth-label">Role ที่ต้องการ *</label>
+        <select class="auth-select" id="reg-role" style="margin:0" onchange="updateRegBld(this.value)">
+          <option value="">— เลือก Role —</option>
+          <option value="tenant">🏢 Tenant</option>
+          <option value="cs">🏗️ CLS</option>
+          <option value="eng">🔧 Engineering</option>
         </select>
       </div>
       <div class="fg">
-        <label class="auth-label">Role ที่ต้องการ *</label>
-        <select class="auth-select" id="reg-role" style="margin:0">
-          <option value="">— เลือก Role —</option>
-          <option value="tenant">Tenant</option>
-          <option value="building">Building Admin</option>
-          <option value="engineering">Engineering</option>
+        <label class="auth-label">อาคาร *</label>
+        <select class="auth-select" id="reg-bld" style="margin:0">
+          <option value="">— เลือกอาคาร —</option>
+          <option value="BTE">BTE</option>
+          <option value="BTB">BTB</option>
+          <option value="UBCII">UBCII</option>
+          <option value="ALL" id="reg-bld-all" style="display:none">ทุกอาคาร (ALL)</option>
         </select>
       </div>
       <div class="fg" style="grid-column:1/-1">
@@ -1545,7 +1527,7 @@ const NAV_CONFIG = {
              {id:'cs',       icon:'📊', label:'CLS Report',     badge:()=>0},
              {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0},
              {id:'db',       icon:'🗄️', label:'Database',      badge:()=>0},
-             {id:'users',    icon:'👥', label:'Users',         badge:()=>pendingUsers().length},
+             {id:'users',    icon:'👥', label:'Users',          badge:()=>getRegisteredUsers().filter(u=>u.status==='pending').length},
              {id:'settings', icon:'⚙️', label:'Settings',      badge:()=>0}],
 };
 
@@ -1622,27 +1604,46 @@ function togglePass(inputId, btn){
 }
 
 function doLogin(){
-  const mod = document.getElementById('login-module').value;
-  const pass = document.getElementById('login-pass').value;
+  const username = (document.getElementById('login-user')||{}).value?.trim() || '';
+  const pass = document.getElementById('login-pass').value?.trim() || '';
   const err = document.getElementById('login-err');
-  if(!mod){showAuthErr('login-err','กรุณาเลือก Module');return;}
+  if(!username){showAuthErr('login-err','กรุณากรอก Username');return;}
   if(!pass){showAuthErr('login-err','กรุณากรอก Password');return;}
 
-  // ใช้ข้อมูลที่โหลดไว้แล้วตอนเปิดหน้า (background preload)
-  const users = getRegisteredUsers().filter(u=>u.status==='approved');
-  const regUser = users.find(u=>u.moduleKey===mod && u.password===pass);
-  const builtIn = checkPassword(mod, pass);
+  // 1. เช็คใน Users sheet (registered users) ก่อน
+  const approvedUsers = getRegisteredUsers().filter(u=>u.status==='approved');
+  const pendingUsers  = getRegisteredUsers().filter(u=>u.status==='pending');
+  const regUser = approvedUsers.find(u=>(u.username||u.name||'').toLowerCase()===username.toLowerCase() && u.password===pass);
+  const pendingUser = !regUser && pendingUsers.find(u=>(u.username||u.name||'').toLowerCase()===username.toLowerCase());
+
+  if(pendingUser){
+    showAuthErr('login-err','บัญชีนี้รอการอนุมัติจาก Admin');
+    return;
+  }
+
+  // 2. Fallback: เช็ค moduleKey เดิมใน App_Passwords (สำหรับ built-in accounts)
+  // username อาจเป็น moduleKey เช่น cs, admin, tenant-BTE
+  const builtIn = !regUser && checkPassword(username, pass);
 
   if(!regUser && !builtIn){
-    showAuthErr('login-err','Password ไม่ถูกต้อง หรือยังไม่ได้รับอนุมัติ');
+    showAuthErr('login-err','Username หรือ Password ไม่ถูกต้อง');
     return;
   }
 
   err.style.display='none';
-  const parts = mod.split('-');
-  currentRole = parts[0];
-  currentBuilding = parts[1]||'ALL';
-  currentUser = regUser ? regUser.name : (currentRole==='cs'?'CLS Admin':'User');
+
+  if(regUser){
+    // ใช้ข้อมูลจาก Users sheet
+    currentRole     = regUser.role || 'tenant';
+    currentBuilding = regUser.building || 'ALL';
+    currentUser     = regUser.name || username;
+  } else {
+    // built-in account (moduleKey format)
+    const parts = username.split('-');
+    currentRole     = parts[0];
+    currentBuilding = parts[1] || 'ALL';
+    currentUser     = currentRole==='admin'?'Admin':currentRole==='cs'?'CLS Admin':'User';
+  }
 
   startApp();
 }
@@ -1655,7 +1656,8 @@ function showAuthErr(id,msg){
 function doLogout(){
   currentUser=null; currentRole=null; currentBuilding=null;
   document.getElementById('login-pass').value='';
-  document.getElementById('login-module').value='';
+  const lu = document.getElementById('login-user');
+  if(lu) lu.value='';
   document.getElementById('login-err').style.display='none';
   document.getElementById('app').style.display='none';
   showScreen('login');
@@ -1671,16 +1673,31 @@ function showScreen(s){
 // REGISTER
 // ============================================================
 async function submitRegister(){
-  const name=v('reg-name'),company=v('reg-company'),email=v('reg-email'),
-        tel=v('reg-tel'),bld=v('reg-bld'),role=v('reg-role'),
+  const username=v('reg-username'),name=v('reg-name'),company=v('reg-company'),
+        email=v('reg-email'),tel=v('reg-tel'),bld=v('reg-bld'),role=v('reg-role'),
         pass=v('reg-pass'),note=v('reg-note');
-  if(!name||!email||!bld||!role||!pass){showAuthErr('reg-err','กรุณากรอกข้อมูลให้ครบ');return;}
+  if(!username||!name||!email||!bld||!role||!pass){showAuthErr('reg-err','กรุณากรอกข้อมูลให้ครบ');return;}
+  // ตรวจ username ซ้ำ
+  const existing = getRegisteredUsers().find(u=>(u.username||'').toLowerCase()===username.toLowerCase());
+  if(existing){showAuthErr('reg-err','Username นี้มีผู้ใช้แล้ว กรุณาเลือกใหม่');return;}
   const moduleKey=role+'-'+bld;
-  const users = getRegisteredUsers();
-  const newUser={id:Date.now(),name,company,email,tel,building:bld,role,moduleKey,password:pass,note,status:'pending',createdAt:new Date().toISOString()};
+  const newUser={id:Date.now(),username,name,company,email,tel,building:bld,role,moduleKey,password:pass,note,status:'pending',createdAt:new Date().toISOString()};
   await saveOneUser(newUser);
   toast('✅ ส่งคำขอลงทะเบียนเรียบร้อย รอ Admin อนุมัติ');
   showScreen('login');
+}
+
+// แสดง/ซ่อน ALL option ตาม Role ที่เลือก
+function updateRegBld(role){
+  const allOpt = document.getElementById('reg-bld-all');
+  const bldSel = document.getElementById('reg-bld');
+  if(!allOpt) return;
+  if(role === 'cs'){
+    allOpt.style.display = '';  // แสดง ALL สำหรับ CLS
+  } else {
+    allOpt.style.display = 'none';
+    if(bldSel.value === 'ALL') bldSel.value = '';
+  }
 }
 
 // ============================================================
@@ -2943,11 +2960,16 @@ function renderUserManagement(){
   document.getElementById('users-pending-wrap').innerHTML=fp.length?
     `<div class="user-grid">${fp.map((u,i)=>`
       <div class="user-row">
-        <div class="user-ava">${u.name.charAt(0)}</div>
+        <div class="user-ava">${(u.username||u.name||"?").charAt(0).toUpperCase()}</div>
         <div class="user-info">
-          <div class="user-info-name">${u.name}</div>
-          <div class="user-info-meta">${u.email} · ${u.company} · ${bldTag(u.building)} · <span class="tag t-amber">${u.role}</span></div>
-          ${u.note?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${u.note}</div>`:''}
+          <div class="user-info-name">${u.name} <span style="font-size:11px;color:var(--accent)">@${u.username||u.moduleKey||'—'}</span></div>
+          <div class="user-info-meta">
+            ${bldTag(u.building||(u.moduleKey||'').split('-')[1]||'')} &nbsp;
+            <span class="tag t-amber">${u.role||(u.moduleKey||'').split('-')[0]||'—'}</span> &nbsp;
+            ${u.email?`📧 ${u.email}`:''}
+            ${u.company?`· ${u.company}`:''}
+          </div>
+          ${u.note?`<div style="font-size:10px;color:var(--text3);margin-top:2px">📝 ${u.note}</div>`:''}
         </div>
         <div class="user-actions">
           <button class="btn btn-g btn-sm" onclick="approveUser('${u.id}')">✓ อนุมัติ</button>
@@ -2959,10 +2981,15 @@ function renderUserManagement(){
   document.getElementById('users-active-wrap').innerHTML=fa.length?
     `<div class="user-grid">${fa.map((u,i)=>`
       <div class="user-row">
-        <div class="user-ava" style="background:linear-gradient(135deg,var(--green),#059669)">${u.name.charAt(0)}</div>
+        <div class="user-ava" style="background:linear-gradient(135deg,var(--green),#059669)">${(u.username||u.name||"?").charAt(0).toUpperCase()}</div>
         <div class="user-info">
-          <div class="user-info-name">${u.name}</div>
-          <div class="user-info-meta">${u.email} · ${u.company} · ${bldTag(u.building)} · <span class="tag t-green">${u.role}</span></div>
+          <div class="user-info-name">${u.name} <span style="font-size:11px;color:var(--accent)">@${u.username||u.moduleKey||'—'}</span></div>
+          <div class="user-info-meta">
+            ${bldTag(u.building||(u.moduleKey||'').split('-')[1]||'')} &nbsp;
+            <span class="tag t-green">${u.role||(u.moduleKey||'').split('-')[0]||'—'}</span> &nbsp;
+            ${u.email?`📧 ${u.email}`:''}
+            ${u.company?`· ${u.company}`:''}
+          </div>
         </div>
         <div class="user-actions">
           <button class="btn btn-o btn-sm" onclick="editUserPass('${u.id}')">🔑 Pass</button>
