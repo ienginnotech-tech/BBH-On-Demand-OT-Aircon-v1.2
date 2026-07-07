@@ -2740,8 +2740,8 @@ function renderUnitRows(){
           </select>
         </div>
         <div class="fg"><label class="flabel" style="font-size:10px">Tenant</label>
-          <input class="finput" id="ur-tenant-${i}" type="text" readonly 
-            style="color:var(--accent);background:var(--surface);font-size:11px">
+          <div class="finput" id="ur-tenant-${i}" 
+            style="color:var(--accent);background:var(--surface2);font-size:11px;min-height:36px;height:auto;white-space:pre-wrap;word-break:break-word;cursor:default;user-select:text"></div>
           ${timeFields}
         </div>
       </div>
@@ -2794,7 +2794,12 @@ function fillUnitRowTenant(idx){
   const bld = document.getElementById('nr-bld')?.value || '';
   const allTenants3 = EXCEL_DATA.tenants || dbData.tenants || [];
   const found = allTenants3.find(u => u['Space']===unit && (!bld||u['Building']===bld));
-  ten.value = found ? (found['Name']||unit) : unit;
+  if(ten.tagName === 'INPUT'){
+    ten.value = found ? `[${found['Space']||unit}] ${found['Name']||''}` : `[${unit}]`;
+  } else {
+    ten.textContent = found ? `[${found['Space']||unit}]
+${found['Name']||''}` : `[${unit}]`;
+  }
 }
 
 function getUnitRowsData(){
