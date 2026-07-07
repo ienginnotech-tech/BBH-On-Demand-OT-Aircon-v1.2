@@ -2707,17 +2707,23 @@ function renderUnitRows(){
     ? allTenants.filter(u => u['Building']===bld && u['Space'] && u['Status']==='Current' && u['Name'])
     : [];
   const unitOptions = filteredUnits.length
-    ? filteredUnits.map(u => `<option value="${u['Space']||''}">${u['Space']||''} — ${(u['Name']||'').substring(0,30)} (${u['Area']||'?'} m²)</option>`).join('')
+    ? filteredUnits.map(u => {
+        const space = u['Space']||'';
+        const name  = (u['Name']||'').substring(0,25);
+        const area  = u['Area']||'?';
+        return `<option value="${space}">[${space}] ${name} · ${area}m²</option>`;
+      }).join('')
     : bld ? '<option value="">ไม่พบ Unit ใน '+bld+'</option>' : '<option value="">— เลือก Building ก่อน —</option>';
 
   let rows = '';
   for(let i=0; i<_unitRows; i++){
-    const showTime = _timeMode === 'diff' || i === 0;
-    const timeFields = `
+    // same mode: ไม่แสดงเวลาใน unit rows เลย (ใช้ shared time)
+    // diff mode: แสดงเวลาทุก unit
+    const timeFields = _timeMode === 'diff' ? `
       <div class="fg"><label class="flabel" style="font-size:10px">เวลาเริ่ม</label>
         <input class="finput" type="time" id="ur-start-${i}" value="20:00"></div>
       <div class="fg"><label class="flabel" style="font-size:10px">เวลาสิ้นสุด</label>
-        <input class="finput" type="time" id="ur-end-${i}" value="00:00"></div>`;
+        <input class="finput" type="time" id="ur-end-${i}" value="00:00"></div>` : '';
 
     rows += `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -2736,7 +2742,7 @@ function renderUnitRows(){
         <div class="fg"><label class="flabel" style="font-size:10px">Tenant</label>
           <input class="finput" id="ur-tenant-${i}" type="text" readonly 
             style="color:var(--accent);background:var(--surface);font-size:11px">
-          ${_timeMode==='diff' ? timeFields : (i===0 ? timeFields : '')}
+          ${timeFields}
         </div>
       </div>
     </div>`;
@@ -2771,7 +2777,12 @@ function filterUnitRowList(idx){
     (u['Name']||'').toLowerCase().includes(q)
   ) : units;
   sel.innerHTML = filtered.length
-    ? filtered.map(u=>`<option value="${u['Space']||''}">${u['Space']||''} — ${(u['Name']||'').substring(0,25)}</option>`).join('')
+    ? filtered.map(u=>{
+        const sp = u['Space']||'';
+        const nm = (u['Name']||'').substring(0,25);
+        const ar = u['Area']||'?';
+        return `<option value="${sp}">[${sp}] ${nm} · ${ar}m²</option>`;
+      }).join('')
     : '<option value="">ไม่พบ</option>';
 }
 
