@@ -1270,7 +1270,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
     <!-- SHARED FIELDS -->
     <div class="form-grid">
       <div class="fg"><label class="flabel">Building</label>
-        <select class="fselect" id="nr-bld" onchange="loadUnits();loadMonthlyUnits();">
+        <select class="fselect" id="nr-bld" onchange="loadUnits();loadMonthlyUnits();renderUnitRows();">
           <option value="">— เลือก —</option><option>BTE</option><option>BTB</option><option>UBCII</option>
         </select></div>
       <div class="fg"><label class="flabel">ประเภท OT Air</label>
@@ -2701,12 +2701,14 @@ function renderUnitRows(){
   const wrap = document.getElementById('unit-rows-wrap');
   if(!wrap) return;
   const bld = document.getElementById('nr-bld')?.value || '';
-  // โหลด units สำหรับ dropdown
-  const units = allUnitsList || [];
-  const filteredUnits = bld ? units.filter(u => u.building === bld || !u.building) : units;
+  // ดึง units จาก EXCEL_DATA.tenants
+  const allTenants = EXCEL_DATA.tenants || dbData.tenants || [];
+  const filteredUnits = bld
+    ? allTenants.filter(u => u['Building']===bld && u['Space'] && u['Status']==='Current' && u['Name'])
+    : [];
   const unitOptions = filteredUnits.length
-    ? filteredUnits.map(u => `<option value="${u.unit||u.Space||u.code||''}">${u.unit||u.Space||u.code||''} — ${(u.name||u.Name||'').substring(0,30)}</option>`).join('')
-    : '<option value="">— เลือก Building ก่อน —</option>';
+    ? filteredUnits.map(u => `<option value="${u['Space']||''}">${u['Space']||''} — ${(u['Name']||'').substring(0,30)} (${u['Area']||'?'} m²)</option>`).join('')
+    : bld ? '<option value="">ไม่พบ Unit ใน '+bld+'</option>' : '<option value="">— เลือก Building ก่อน —</option>';
 
   let rows = '';
   for(let i=0; i<_unitRows; i++){
@@ -2762,13 +2764,14 @@ function filterUnitRowList(idx){
   const sel = document.getElementById(`ur-unit-${idx}`);
   if(!sel) return;
   const bld = document.getElementById('nr-bld')?.value || '';
-  const units = (allUnitsList||[]).filter(u => !bld || u.building===bld || !u.building);
-  const filtered = q ? units.filter(u => 
-    (u.unit||u.Space||u.code||'').toLowerCase().includes(q) ||
-    (u.name||u.Name||'').toLowerCase().includes(q)
+  const allTenants2 = EXCEL_DATA.tenants || dbData.tenants || [];
+  const units = bld ? allTenants2.filter(u => u['Building']===bld && u['Space'] && u['Status']==='Current') : allTenants2;
+  const filtered = q ? units.filter(u =>
+    (u['Space']||'').toLowerCase().includes(q) ||
+    (u['Name']||'').toLowerCase().includes(q)
   ) : units;
   sel.innerHTML = filtered.length
-    ? filtered.map(u=>`<option value="${u.unit||u.Space||u.code||''}">${u.unit||u.Space||u.code||''} — ${(u.name||u.Name||'').substring(0,25)}</option>`).join('')
+    ? filtered.map(u=>`<option value="${u['Space']||''}">${u['Space']||''} — ${(u['Name']||'').substring(0,25)}</option>`).join('')
     : '<option value="">ไม่พบ</option>';
 }
 
@@ -2778,8 +2781,9 @@ function fillUnitRowTenant(idx){
   if(!sel || !ten) return;
   const unit = sel.value;
   const bld = document.getElementById('nr-bld')?.value || '';
-  const found = (allUnitsList||[]).find(u => (u.unit||u.Space||u.code||'')===unit && (!bld||u.building===bld||!u.building));
-  ten.value = found ? (found.name||found.Name||unit) : unit;
+  const allTenants3 = EXCEL_DATA.tenants || dbData.tenants || [];
+  const found = allTenants3.find(u => u['Space']===unit && (!bld||u['Building']===bld));
+  ten.value = found ? (found['Name']||unit) : unit;
 }
 
 function getUnitRowsData(){
