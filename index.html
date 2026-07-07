@@ -754,9 +754,9 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
         <label class="auth-label">Role ที่ต้องการ *</label>
         <select class="auth-select" id="reg-role" style="margin:0" onchange="updateRegBld(this.value)">
           <option value="">— เลือก Role —</option>
-          <option value="tenant">🏢 Tenant</option>
-          <option value="cs">🏗️ CLS</option>
-          <option value="eng">🔧 Engineering</option>
+          <option value="tenant">🏢 Tenant — เห็นแค่หน้าแจ้งคำขอ</option>
+          <option value="cs">🏗️ CLS — เห็น Tenant/CLS/Engineering/Report/YARDI</option>
+          <option value="eng">🔧 Engineering — เห็นแค่หน้างาน OT</option>
         </select>
       </div>
       <div class="fg">
@@ -1506,21 +1506,20 @@ const _badge = {
 };
 
 const NAV_CONFIG = {
-  // Tenant: เห็นแค่ OT Request
+  // 1. TENANT: เห็นแค่หน้าแจ้งคำขอ OT ของอาคารตัวเอง
   tenant:   [{id:'tenant',   icon:'🏢', label:'OT Request',   badge:()=>gData.tenantReqs.filter(r=>getStatus(r)==='pending').length}],
-  // Building/CLS: badge = คำขอที่ยังไม่ Ack
-  building: [{id:'building', icon:'🏗️', label:'CLS Assign',  badge:()=>_badge.clsPending()},
-             {id:'db',       icon:'🗄️', label:'Database',      badge:()=>0}],
-  // Engineering: badge = งานที่ยังไม่ปิด
-  eng:      [{id:'eng',      icon:'🔧', label:'งาน OT',        badge:()=>_badge.engPending()}],
-  // CS: เห็นทุกหน้า พร้อม badge แต่ละหน้า
+
+  // 2. CLS: เห็น TENANT / CLS / ENGINEERING / CLS REPORT / SENT TO YARDI ของอาคารตัวเอง
   cs:       [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending()},
              {id:'building', icon:'🏗️', label:'CLS',           badge:()=>_badge.clsPending()},
              {id:'eng',      icon:'🔧', label:'Engineering',    badge:()=>_badge.engPending()},
              {id:'cs',       icon:'📊', label:'CLS Report',     badge:()=>0},
-             {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0},
-             {id:'db',       icon:'🗄️', label:'Database',      badge:()=>0}],
-  // Admin (Super Admin): เห็นทุกหน้ารวม Users + Settings
+             {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0}],
+
+  // 3. ENGINEERING: เห็นแค่หน้างาน OT ของอาคารตัวเอง
+  eng:      [{id:'eng',      icon:'🔧', label:'งาน OT',        badge:()=>_badge.engPending()}],
+
+  // 4. ADMIN: เห็นทุกอาคาร ทุกหน้า + Users + Settings
   admin:    [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending()},
              {id:'building', icon:'🏗️', label:'CLS',           badge:()=>_badge.clsPending()},
              {id:'eng',      icon:'🔧', label:'Engineering',    badge:()=>_badge.engPending()},
@@ -1529,6 +1528,13 @@ const NAV_CONFIG = {
              {id:'db',       icon:'🗄️', label:'Database',      badge:()=>0},
              {id:'users',    icon:'👥', label:'Users',          badge:()=>getRegisteredUsers().filter(u=>u.status==='pending').length},
              {id:'settings', icon:'⚙️', label:'Settings',      badge:()=>0}],
+
+  // Legacy aliases (ให้ built-in moduleKey เดิมยังใช้ได้)
+  building: [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending()},
+             {id:'building', icon:'🏗️', label:'CLS',           badge:()=>_badge.clsPending()},
+             {id:'eng',      icon:'🔧', label:'Engineering',    badge:()=>_badge.engPending()},
+             {id:'cs',       icon:'📊', label:'CLS Report',     badge:()=>0},
+             {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0}],
 };
 
 // ---- STATE ----
@@ -1634,15 +1640,20 @@ function doLogin(){
 
   if(regUser){
     // ใช้ข้อมูลจาก Users sheet
-    currentRole     = regUser.role || 'tenant';
-    currentBuilding = regUser.building || 'ALL';
+    const rawRegRole = regUser.role || 'tenant';
+    // map building → cs สำหรับ registered users เก่า
+    currentRole     = rawRegRole === 'building' ? 'cs' : rawRegRole;
+    currentBuilding = regUser.building || (regUser.moduleKey||'').split('-')[1] || 'ALL';
     currentUser     = regUser.name || username;
   } else {
-    // built-in account (moduleKey format)
+    // built-in account (moduleKey format) — map เก่าให้ตรง
     const parts = username.split('-');
-    currentRole     = parts[0];
+    const rawRole = parts[0];
+    // map building → cs เพื่อให้ใช้ NAV_CONFIG['cs']
+    currentRole     = rawRole === 'building' ? 'cs' : rawRole;
     currentBuilding = parts[1] || 'ALL';
-    currentUser     = currentRole==='admin'?'Admin':currentRole==='cs'?'CLS Admin':'User';
+    const roleLabels = {admin:'Admin',cs:'CLS Admin',eng:'Engineering',tenant:'Tenant'};
+    currentUser     = roleLabels[currentRole] || 'User';
   }
 
   startApp();
@@ -1710,7 +1721,7 @@ function startApp(){
 
   // Set sidebar info
   const roleLabel={'tenant':'🏢 Tenant','building':'🏗️ CLS','manager':'✅ Manager',
-                   'eng':'🔧 Engineering','cs':'📊 CLS Admin','admin':'👑 Super Admin'};
+                   'eng':'🔧 Engineering','cs':'📊 CLS','admin':'👑 Super Admin'};
   document.getElementById('sb-building').textContent = currentBuilding==='ALL'?'All Buildings':'Building: '+currentBuilding;
   document.getElementById('sb-username').textContent = currentUser;
   document.getElementById('sb-role').textContent = roleLabel[currentRole]||currentRole;
