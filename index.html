@@ -2596,21 +2596,26 @@ function engAction(i,type){
   const now=new Date();
 
   // Default วันที่ = วันที่ Tenant ขอ (Start Date) แต่ปรับได้
-  // parse วันที่จาก r['Date'] format DD/MM/YYYY หรือ YYYY-MM-DD
   let defaultDate = now.toISOString().split('T')[0];
-  const reqDate = r['Date'] || r['Start Date'] || '';
+  const reqDate = String(r['Date'] || r['Start Date'] || '').trim();
   if(reqDate){
-    // รองรับ format DD/MM/YYYY และ YYYY-MM-DD
-    if(reqDate.includes('/')){
-      const parts = reqDate.split('/');
+    // ตัด เวลา และ timezone ออกก่อน เช่น "01/07/2569 00:00" → "01/07/2569"
+    const dateOnly = reqDate.split(' ')[0].split('T')[0];
+    if(dateOnly.includes('/')){
+      const parts = dateOnly.split('/');
       if(parts.length===3){
-        // DD/MM/YYYY หรือ DD/MM/YYYY พ.ศ.
         let yr = parseInt(parts[2]);
-        if(yr > 2500) yr -= 543; // แปลง พ.ศ. → ค.ศ.
-        defaultDate = `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+        if(yr > 2500) yr -= 543; // พ.ศ. → ค.ศ.
+        const mm = parts[1].padStart(2,'0');
+        const dd = parts[0].padStart(2,'0');
+        defaultDate = `${yr}-${mm}-${dd}`;
       }
-    } else if(reqDate.includes('-')){
-      defaultDate = reqDate.split('T')[0];
+    } else if(dateOnly.includes('-')){
+      // YYYY-MM-DD
+      const parts = dateOnly.split('-');
+      let yr = parseInt(parts[0]);
+      if(yr > 2500) yr -= 543;
+      defaultDate = `${yr}-${parts[1]}-${parts[2]}`;
     }
   }
 
