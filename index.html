@@ -1423,6 +1423,10 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
       <div class="fg"><label class="flabel">เลขที่คำขอ</label><input class="finput" id="as-req" type="text" readonly style="color:var(--accent);background:var(--surface2);cursor:default">
         <div id="as-req-date" style="font-size:11px;color:var(--amber);margin-top:3px;padding:4px 8px;background:var(--surface2);border-radius:4px"></div>
       </div>
+      <div class="fg"><label class="flabel">วันที่ขอเปิด</label><input class="finput" type="date" id="as-start-date"></div>
+      <div class="fg"><label class="flabel">วันที่ขอปิด</label><input class="finput" type="date" id="as-finish-date"></div>
+      <div class="fg"><label class="flabel">เวลาเปิด</label><input class="finput" type="time" id="as-start-time"></div>
+      <div class="fg"><label class="flabel">เวลาปิด</label><input class="finput" type="time" id="as-finish-time"></div>
       <div class="fg"><label class="flabel">ช่าง</label><select class="fselect" id="as-staff"><option>A</option><option>B</option><option>C</option></select></div>
       <div class="fg"><label class="flabel">Shift</label><select class="fselect" id="as-shift"><option>Day</option><option>Afternoon</option><option>Night</option></select></div>
       <div class="fg"><label class="flabel">Tenant_Level Charge</label><select class="fselect" id="as-level" onchange="filterAssignRateCodes()">
@@ -2129,13 +2133,18 @@ function renderTenantTable(){
   if(!data.length){wrap.innerHTML=emptyState('ยังไม่มีคำขอ OT Air');return;}
   const mBadge = '<span style="display:inline-block;margin-left:4px;padding:1px 5px;font-size:9px;font-weight:700;letter-spacing:.5px;border-radius:3px;background:rgba(0,180,255,.15);color:#00b4ff;border:1px solid rgba(0,180,255,.3);vertical-align:middle">📅 MONTHLY</span>';
   wrap.innerHTML='<div class="table-wrap"><table>'
-    +'<thead><tr><th>เลขที่</th><th>วันที่</th><th>อาคาร</th><th>ประเภท</th><th>บริษัท</th><th>Space</th><th>เวลา</th><th>สถานะ</th><th></th></tr></thead>'
+    +'<thead><tr><th>เลขที่</th><th>วันที่</th><th>อาคาร</th><th>ประเภท</th><th>บริษัท</th><th>Space</th><th>วันที่ขอเปิด-ปิด</th><th>เวลา</th><th>สถานะ</th><th></th></tr></thead>'
     +'<tbody>'+data.map((r,i)=>{
       const isM = !!(r['Monthly_End_Date'] || r['isMonthly'] || (r['Remark']||'').startsWith('[MONTHLY'));
       const badge = isM ? mBadge : '';
       const dateCell = (isM && r['Monthly_End_Date'])
         ? '<span style="color:var(--text2);font-size:11px">'+fmtDate(r['Date'])+'<br><span style="color:var(--text3);font-size:10px">ถึง '+fmtDate(r['Monthly_End_Date'])+'</span></span>'
         : '<span style="color:var(--text2);font-size:11px">'+fmtDate(r['Date'])+'</span>';
+      const _osd = fmtDate(r['Start Date']||r['Date']);
+      const _ofd = fmtDate(r['Finish Date']||r['Monthly_End_Date']);
+      const openCloseCell = (_ofd && _ofd!=='—' && _ofd!==_osd)
+        ? '<span style="font-size:11px;white-space:nowrap">'+_osd+'<br><span style="color:var(--accent);font-size:11px;opacity:.85">ถึง '+_ofd+'</span></span>'
+        : '<span style="font-size:11px;white-space:nowrap">'+_osd+'</span>';
       return '<tr>'
         +'<td><strong style="color:var(--accent)">'+(r['OT-AIR Work Request No.']||'—')+'</strong>'+badge+'</td>'
         +'<td>'+dateCell+'</td>'
@@ -2143,6 +2152,7 @@ function renderTenantTable(){
         +'<td>'+typeTag(r['Type_OT-AIR'])+'</td>'
         +'<td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r['Name']||'—')+'</td>'
         +'<td><strong>'+(r['Space']||'—')+'</strong></td>'
+        +'<td>'+openCloseCell+'</td>'
         +'<td style="font-size:12px;white-space:nowrap">'+(r['Start time']||'—')+' – '+(r['Finish time']||'—')+'</td>'
         +'<td>'+statusTag(getStatus(r))+'</td>'
         +'<td><button class="btn btn-o btn-sm" onclick="showDetail('+i+',\'tenant\')">ดู</button></td>'
@@ -2190,7 +2200,7 @@ function renderBuildingRows(data, wrap){
       const _sd = fmtDate(r['Start Date']||r['Date']);
       const _fd = fmtDate(r['Finish Date']||r['Monthly_End_Date']);
       const dateRangeCell = (_fd && _fd!=='—' && _fd!==_sd)
-        ? `${_sd}<br><span style="color:var(--text3);font-size:10px">ถึง ${_fd}</span>`
+        ? `${_sd}<br><span style="color:var(--accent);font-size:11px;opacity:.85">ถึง ${_fd}</span>`
         : _sd;
       return `<tr style="${rowStyle}">
         <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong>${monthlyBadgeFor(r)}</td>
@@ -2238,7 +2248,7 @@ function renderEngRows(data, wrap){
     ...(gData.engWork||[]).filter(r=>r['Engineering Action(Acknowledge/Reject)']==='Reject').map(r=>r['OT-AIR Work Request No.']),
   ]);
   wrap.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>เลขที่</th><th>Bld</th><th>Space</th><th>วันที่ขอ</th><th>เวลา Plan</th><th>ช่าง</th><th>Rate Code</th><th>เปิดจริง</th><th>ปิดจริง</th><th>ชม.จริง</th><th>สถานะ</th><th></th></tr></thead>
+    <thead><tr><th>เลขที่</th><th>Bld</th><th>Space</th><th>วันที่ขอเปิด-ปิด</th><th>เวลา Plan</th><th>ช่าง</th><th>Rate Code</th><th>เปิดจริง</th><th>ปิดจริง</th><th>ชม.จริง</th><th>สถานะ</th><th></th></tr></thead>
     <tbody>${data.map((r,i)=>{
       const isRejected=rejectSet.has(r['OT-AIR Work Request No.']);
       const ack=r['Engineering Action(Acknowledge/Reject)'];
@@ -2265,12 +2275,17 @@ function renderEngRows(data, wrap){
         const _eno=encodeURIComponent(r['OT-AIR Work Request No.']||'');
         action=`<button class="btn btn-g btn-sm" onclick="doEngAckByNo('${_eno}')">✓ Ack</button><button class="btn btn-r btn-sm" style="margin-left:3px" onclick="doEngRejectByNo('${_eno}')">✕</button>`;
       }
+      const _esd = fmtDate(r['Start Date']||r['Date']);
+      const _efd = fmtDate(r['Finish Date']||r['Monthly_End_Date']);
+      const engDateCell = (_efd && _efd!=='—' && _efd!==_esd)
+        ? `${_esd}<br><span style="color:var(--accent);font-size:11px;opacity:.85">ถึง ${_efd}</span>`
+        : _esd;
       const rowStyle=isRejected?'opacity:.5;background:rgba(248,81,73,.04)':'';
       return `<tr style="${rowStyle}">
         <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong>${monthlyBadgeFor(r)}</td>
         <td>${bldTag(r['Building'])}</td>
         <td><strong>${r['Space']||'—'}</strong></td>
-        <td style="font-size:11px;color:var(--amber)">${(r['Date']||r['Start Date']||'—').split(' ')[0]}</td>
+        <td style="font-size:11px;color:var(--amber);white-space:nowrap">${engDateCell}</td>
         <td style="font-size:11px;white-space:nowrap">${r['Start time']||'—'}–${r['Finish time']||'—'}</td>
         <td>${r['Staff Name']||'—'}</td>
         <td style="font-size:10px;color:var(--accent)">${(r['Code OT Air']||'—').replace('XXXCH_OT_AIR_','')}</td>
@@ -2440,6 +2455,14 @@ function doAssign(i){
   const reqDateEl = document.getElementById('as-req-date');
   if(reqDateEl) reqDateEl.textContent = `วันที่ขอ: ${r['Date']||r['Start Date']||'—'} | เวลา: ${r['Start time']||'—'}–${r['Finish time']||'—'}`;
 
+  // เติมค่าวันที่/เวลา เปิด-ปิด ให้แก้ไขได้ (แปลง พ.ศ. → ค.ศ. สำหรับ input date)
+  const sdEl=document.getElementById('as-start-date'), fdEl=document.getElementById('as-finish-date');
+  const stEl=document.getElementById('as-start-time'), ftEl=document.getElementById('as-finish-time');
+  if(sdEl) sdEl.value = buddhistToISO(r['Start Date']||r['Date']);
+  if(fdEl) fdEl.value = buddhistToISO(r['Finish Date']||r['Monthly_End_Date']||r['Start Date']||r['Date']);
+  if(stEl) stEl.value = timeInputVal(r['Start time']);
+  if(ftEl) ftEl.value = timeInputVal(r['Finish time']);
+
   // Populate Rate Code — กรองตาม Building
   const bld = r['Building'] || '';
   currentAssignBuilding = bld;
@@ -2523,7 +2546,13 @@ async function submitAssign(){
   const reqEl=document.getElementById('as-req');
   const req=reqEl?reqEl.value.trim():'';
   const staff=v('as-staff'),shift=v('as-shift'),code=v('as-code'),ack=v('as-ack'),billing=v('as-billing');
+  const startDateISO=v('as-start-date'), finishDateISO=v('as-finish-date');
+  const startTime=v('as-start-time'), finishTime=v('as-finish-time');
   if(!req||!staff){toast('⚠️ กรุณากรอกข้อมูลให้ครบ');return;}
+  if(startDateISO && finishDateISO && finishDateISO<startDateISO){toast('⚠️ วันที่ขอปิดต้องไม่ก่อนวันที่ขอเปิด');return;}
+  // แปลงกลับเป็น พ.ศ. สำหรับบันทึกลง Sheet (รูปแบบเดิมของระบบ)
+  const startDateB = startDateISO ? isoToBuddhist(startDateISO) : '';
+  const finishDateB = finishDateISO ? isoToBuddhist(finishDateISO) : '';
   // ใช้ index จาก dataset ที่ set ตอน doAssign (ไม่ต้อง findIndex อีก)
   const preIdx = reqEl&&reqEl.dataset.idx!==undefined ? parseInt(reqEl.dataset.idx) : -1;
   const idx = preIdx>=0 ? preIdx : gData.buildingAssigns.findIndex(r=>r['OT-AIR Work Request No.']===req);
@@ -2534,11 +2563,32 @@ async function submitAssign(){
     gData.buildingAssigns[idx]['Admin helpdesk (Acknowledge/Reject)']=ack;
     gData.buildingAssigns[idx]['Billing Date Period']=billing;
     gData.buildingAssigns[idx]['Manager Consider(Approved/Waiting/Reject)']='Waiting';
+    if(startDateB){ gData.buildingAssigns[idx]['Start Date']=startDateB; gData.buildingAssigns[idx]['Date']=startDateB; }
+    if(finishDateB) gData.buildingAssigns[idx]['Finish Date']=finishDateB;
+    if(startTime) gData.buildingAssigns[idx]['Start time']=startTime;
+    if(finishTime) gData.buildingAssigns[idx]['Finish time']=finishTime;
+    // Sync วันที่/เวลา ไปยัง Tenant และ Engineering ให้ตรงกันทั้งระบบ
+    const tIdx=gData.tenantReqs.findIndex(r=>r['OT-AIR Work Request No.']===req);
+    if(tIdx>=0){
+      if(startDateB){ gData.tenantReqs[tIdx]['Start Date']=startDateB; gData.tenantReqs[tIdx]['Date']=startDateB; }
+      if(finishDateB) gData.tenantReqs[tIdx]['Finish Date']=finishDateB;
+      if(startTime) gData.tenantReqs[tIdx]['Start time']=startTime;
+      if(finishTime) gData.tenantReqs[tIdx]['Finish time']=finishTime;
+    }
     const eIdx=gData.engWork.findIndex(r=>r['OT-AIR Work Request No.']===req);
-    if(eIdx>=0){gData.engWork[eIdx]['Staff Name']=staff;gData.engWork[eIdx]['Shift']=shift;gData.engWork[eIdx]['Code OT Air']=code;}
+    if(eIdx>=0){
+      gData.engWork[eIdx]['Staff Name']=staff;gData.engWork[eIdx]['Shift']=shift;gData.engWork[eIdx]['Code OT Air']=code;
+      if(startDateB){ gData.engWork[eIdx]['Start Date']=startDateB; gData.engWork[eIdx]['Date']=startDateB; }
+      if(finishDateB) gData.engWork[eIdx]['Finish Date']=finishDateB;
+      if(startTime) gData.engWork[eIdx]['Start time']=startTime;
+      if(finishTime) gData.engWork[eIdx]['Finish time']=finishTime;
+    }
   }
-  if(USE_LIVE_API) await apiGET({action:'assign',data:encodeURIComponent(JSON.stringify({reqNo:req,staffName:staff,shift,codeOtAir:code,billingDatePeriod:billing}))});
-  renderBuildingTable(); renderEngTable(); updateAllStats();
+  if(USE_LIVE_API) await apiGET({action:'assign',data:encodeURIComponent(JSON.stringify({
+    reqNo:req,staffName:staff,shift,codeOtAir:code,billingDatePeriod:billing,
+    startDate:startDateB,finishDate:finishDateB,startTime,finishTime,
+  }))});
+  renderBuildingTable(); renderTenantTable(); renderEngTable(); updateAllStats();
   closeMod('mod-assign');
   toast('✅ มอบหมาย '+req+' → '+staff+(USE_LIVE_API?' (Sync แล้ว)':''));
 }
@@ -3844,6 +3894,32 @@ function nowStr(){
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 function timeToMin(t){if(!t)return 0;const p=String(t).split(':');return parseInt(p[0]||0)*60+parseInt(p[1]||0);}
+
+// ============================================================
+// วันที่ในชีต Sheet เก็บเป็นปี พ.ศ. (เช่น "2569-06-13 00:00:00")
+// แปลงเป็น ค.ศ. สำหรับ <input type="date"> และแปลงกลับตอนบันทึก
+// ============================================================
+function buddhistToISO(s){
+  if(!s) return '';
+  const datePart = String(s).split(' ')[0];
+  const parts = datePart.split('-').map(Number);
+  const y=parts[0], m=parts[1], d=parts[2];
+  if(!y || !m || !d) return '';
+  return (y-543)+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+function isoToBuddhist(s){
+  if(!s) return '';
+  const parts = s.split('-').map(Number);
+  const y=parts[0], m=parts[1], d=parts[2];
+  if(!y || !m || !d) return '';
+  return (y+543)+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0')+' 00:00:00';
+}
+function timeInputVal(s){
+  if(!s) return '';
+  const p = String(s).split(':');
+  if(!p[0]) return '';
+  return String(p[0]).padStart(2,'0')+':'+String(p[1]||'00').padStart(2,'0');
+}
 
 function getStatus(r){
   const reqNo = r['OT-AIR Work Request No.']||'';
