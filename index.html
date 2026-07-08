@@ -2260,12 +2260,18 @@ function renderEngRows(data, wrap){
         <td><strong style="color:${isRejected?'var(--rose)':'var(--accent)'}">${r['OT-AIR Work Request No.']||'—'}</strong>${monthlyBadgeFor(r)}</td>
         <td>${bldTag(r['Building'])}</td>
         <td><strong>${r['Space']||'—'}</strong></td>
-        <td style="font-size:11px;color:var(--amber)">${r['Date']||r['Start Date']||'—'}</td>
+        <td style="font-size:11px;color:var(--amber)">${(r['Date']||r['Start Date']||'—').split(' ')[0]}</td>
         <td style="font-size:11px;white-space:nowrap">${r['Start time']||'—'}–${r['Finish time']||'—'}</td>
         <td>${r['Staff Name']||'—'}</td>
         <td style="font-size:10px;color:var(--accent)">${(r['Code OT Air']||'—').replace('XXXCH_OT_AIR_','')}</td>
-        <td style="color:var(--green);font-weight:600">${r['Open_OT-Air(Date)']?r['Open_OT-Air(Date)']+' ':''}<span style="color:var(--jade)">${r['Open_OT-Air(Time)']||'—'}</span></td>
-        <td style="color:var(--rose);font-weight:600">${r['Close_OT-Air(Date)']?r['Close_OT-Air(Date)']+' ':''}<span style="color:var(--rose)">${r['Close_OT-Air(Time)']||'—'}</span></td>
+        <td style="font-size:11px">
+          ${r['Open_OT-Air(Date)']?`<div style="color:var(--text3);font-size:10px">${r['Open_OT-Air(Date)'].split(' ')[0]}</div>`:''}
+          <span style="color:var(--jade);font-weight:600">${r['Open_OT-Air(Time)']||'—'}</span>
+        </td>
+        <td style="font-size:11px">
+          ${r['Close_OT-Air(Date)']?`<div style="color:var(--text3);font-size:10px">${r['Close_OT-Air(Date)'].split(' ')[0]}</div>`:''}
+          <span style="color:var(--rose);font-weight:600">${r['Close_OT-Air(Time)']||'—'}</span>
+        </td>
         <td>${(r['Cal_Actual_Hours']&&parseFloat(r['Cal_Actual_Hours'])>0)?`<strong style="color:var(--green)">${parseFloat(r['Cal_Actual_Hours']).toFixed(2)} ชม.</strong>`:(r['Open_OT-Air(Time)']&&r['Close_OT-Air(Time)'])?`<strong style="color:var(--green)">${((timeToMin(r['Close_OT-Air(Time)'])-timeToMin(r['Open_OT-Air(Time)'])+1440)%1440/60).toFixed(2)} ชม.</strong>`:'—'}</td>
         <td>${stTag}</td>
         <td style="white-space:nowrap">${action}</td>
@@ -2597,7 +2603,10 @@ function engAction(i,type){
 
   // Default วันที่ = วันที่ Tenant ขอ (Start Date) แต่ปรับได้
   let defaultDate = now.toISOString().split('T')[0];
-  const reqDate = String(r['Date'] || r['Start Date'] || '').trim();
+  // ใช้ Start Date (column L) สำหรับวันเปิด, Finish Date (column M) สำหรับวันปิด
+  const _startDate = r['Start Date'] || r['Monthly_Start_Date'] || r['Date'] || '';
+  const _finishDate = r['Finish Date'] || r['Monthly_End_Date'] || _startDate || '';
+  const reqDate = String(type==='open' ? _startDate : _finishDate).trim();
   if(reqDate){
     // ตัด เวลา และ timezone ออกก่อน เช่น "01/07/2569 00:00" → "01/07/2569"
     const dateOnly = reqDate.split(' ')[0].split('T')[0];
