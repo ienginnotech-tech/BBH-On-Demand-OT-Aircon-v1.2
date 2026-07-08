@@ -2265,12 +2265,12 @@ function renderEngRows(data, wrap){
         <td>${r['Staff Name']||'—'}</td>
         <td style="font-size:10px;color:var(--accent)">${(r['Code OT Air']||'—').replace('XXXCH_OT_AIR_','')}</td>
         <td style="font-size:11px">
-          ${r['Open_OT-Air(Date)']?`<div style="color:var(--text3);font-size:10px">${r['Open_OT-Air(Date)'].split(' ')[0]}</div>`:''}
-          <span style="color:var(--jade);font-weight:600">${r['Open_OT-Air(Time)']||'—'}</span>
+          ${r['Open_OT-Air(Date)']?`<div style="color:var(--accent);font-size:10px;font-weight:600">${r['Open_OT-Air(Date)'].split(' ')[0]}</div>`:''}
+          <span style="color:var(--jade);font-weight:700">${r['Open_OT-Air(Time)']||'—'}</span>
         </td>
         <td style="font-size:11px">
-          ${r['Close_OT-Air(Date)']?`<div style="color:var(--text3);font-size:10px">${r['Close_OT-Air(Date)'].split(' ')[0]}</div>`:''}
-          <span style="color:var(--rose);font-weight:600">${r['Close_OT-Air(Time)']||'—'}</span>
+          ${r['Close_OT-Air(Date)']?`<div style="color:var(--amber);font-size:10px;font-weight:600">${r['Close_OT-Air(Date)'].split(' ')[0]}</div>`:''}
+          <span style="color:var(--rose);font-weight:700">${r['Close_OT-Air(Time)']||'—'}</span>
         </td>
         <td>${(r['Cal_Actual_Hours']&&parseFloat(r['Cal_Actual_Hours'])>0)?`<strong style="color:var(--green)">${parseFloat(r['Cal_Actual_Hours']).toFixed(2)} ชม.</strong>`:(r['Open_OT-Air(Time)']&&r['Close_OT-Air(Time)'])?`<strong style="color:var(--green)">${((timeToMin(r['Close_OT-Air(Time)'])-timeToMin(r['Open_OT-Air(Time)'])+1440)%1440/60).toFixed(2)} ชม.</strong>`:'—'}</td>
         <td>${stTag}</td>
