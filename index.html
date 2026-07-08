@@ -2261,11 +2261,12 @@ function renderEngRows(data, wrap){
         action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button>`;
       } else if(isDone){
         stTag=`<span class="tag t-green">✓ ปิดแล้ว</span>`;
-        action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button>`;
+        const _enoD=encodeURIComponent(r['OT-AIR Work Request No.']||'');
+        action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button><button class="btn btn-o btn-sm" style="margin-left:3px" onclick="engEditByNo('${_enoD}')">✏ แก้ไข</button>`;
       } else if(isOpen && !isRejected){
         stTag=`<span class="tag t-amber">⚙ กำลังเปิด</span>`;
         const _eno2=encodeURIComponent(r['OT-AIR Work Request No.']||'');
-        action=`<button class="btn btn-r btn-sm" onclick="engActionByNo('${_eno2}','close')">■ ปิด</button>`;
+        action=`<button class="btn btn-r btn-sm" onclick="engActionByNo('${_eno2}','close')">■ ปิด</button><button class="btn btn-o btn-sm" style="margin-left:3px" onclick="engEditByNo('${_eno2}')">✏ แก้ไข</button>`;
       } else if(isAck){
         stTag=`<span class="tag t-purple">✓ Ack — รอเปิด</span>`;
         const _eno3=encodeURIComponent(r['OT-AIR Work Request No.']||'');
@@ -2628,6 +2629,41 @@ function engActionByNo(noEnc,type){
   const i=gData.engWork.findIndex(r=>r['OT-AIR Work Request No.']=== no);
   if(i<0){toast('⚠️ ไม่พบคำขอ '+no);return;}
   engAction(i,type);
+}
+function engEditByNo(noEnc){
+  const no=decodeURIComponent(noEnc);
+  const i=gData.engWork.findIndex(r=>r['OT-AIR Work Request No.']=== no);
+  if(i<0){toast('⚠️ ไม่พบคำขอ '+no);return;}
+  engEdit(i);
+}
+// แก้ไขวันที่/เวลา เปิด-ปิด จริง ที่บันทึกผิด — ไม่เช็คเงื่อนไข Acknowledge เพราะงานผ่านขั้นตอนนั้นมาแล้ว
+function engEdit(i){
+  currentEngRow=i;
+  const r=gData.engWork[i]||{};
+  const hasClose=!!r['Close_OT-Air(Time)'];
+  const hasOpen=!!r['Open_OT-Air(Time)'];
+  const editingClose = hasClose;
+  const dEl=document.getElementById('ea-date'), tEl=document.getElementById('ea-time');
+  if(editingClose){
+    dEl.value = buddhistToISO(r['Close_OT-Air(Date)']) || '';
+    tEl.value = timeInputVal(r['Close_OT-Air(Time)']);
+  } else {
+    dEl.value = buddhistToISO(r['Open_OT-Air(Date)']) || '';
+    tEl.value = timeInputVal(r['Open_OT-Air(Time)']);
+  }
+  const actionSel=document.getElementById('ea-action');
+  actionSel.innerHTML = (hasOpen?'<option>Open</option>':'') + (hasClose?'<option>Close</option>':'');
+  actionSel.value = editingClose?'Close':'Open';
+  if(r['Staff Name']){const s=document.getElementById('ea-name');for(let o of s.options){if(o.value===r['Staff Name']){s.value=r['Staff Name'];break;}}}
+  document.getElementById('eng-modal-title').firstChild.textContent='✏ แก้ไขเวลาเปิด-ปิด ';
+  document.getElementById('eng-action-info').innerHTML=`
+    <div><span>เลขที่</span><strong>${r['OT-AIR Work Request No.']||'—'}</strong></div>
+    <div><span>Building</span><strong>${r['Building']||'—'}</strong></div>
+    <div><span>Space</span><strong>${r['Space']||'—'}</strong></div>
+    ${hasOpen?`<div><span>เปิดจริง (เดิม)</span><strong style="color:var(--green)">${(r['Open_OT-Air(Date)']||'').split(' ')[0]} ${r['Open_OT-Air(Time)']||'—'}</strong></div>`:''}
+    ${hasClose?`<div><span>ปิดจริง (เดิม)</span><strong style="color:var(--rose)">${(r['Close_OT-Air(Date)']||'').split(' ')[0]} ${r['Close_OT-Air(Time)']||'—'}</strong></div>`:''}
+    <div style="color:var(--amber);font-size:11px">⚠ เลือก "การดำเนินการ" ด้านล่างว่าจะแก้ไขเวลาเปิดหรือเวลาปิด</div>`;
+  openMod('mod-eng-action');
 }
 async function doEngAck(i){
   const r=gData.engWork[i]; if(!r)return;
