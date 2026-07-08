@@ -2594,8 +2594,34 @@ function engAction(i,type){
   currentEngRow=i;
   const r=gData.engWork[i]||{};
   const now=new Date();
-  document.getElementById('ea-date').value=now.toISOString().split('T')[0];
-  document.getElementById('ea-time').value=now.toTimeString().slice(0,5);
+
+  // Default วันที่ = วันที่ Tenant ขอ (Start Date) แต่ปรับได้
+  // parse วันที่จาก r['Date'] format DD/MM/YYYY หรือ YYYY-MM-DD
+  let defaultDate = now.toISOString().split('T')[0];
+  const reqDate = r['Date'] || r['Start Date'] || '';
+  if(reqDate){
+    // รองรับ format DD/MM/YYYY และ YYYY-MM-DD
+    if(reqDate.includes('/')){
+      const parts = reqDate.split('/');
+      if(parts.length===3){
+        // DD/MM/YYYY หรือ DD/MM/YYYY พ.ศ.
+        let yr = parseInt(parts[2]);
+        if(yr > 2500) yr -= 543; // แปลง พ.ศ. → ค.ศ.
+        defaultDate = `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+      }
+    } else if(reqDate.includes('-')){
+      defaultDate = reqDate.split('T')[0];
+    }
+  }
+
+  // Default เวลา = เวลาเริ่มที่ Tenant ขอ (Start time) แต่ปรับได้
+  // ถ้าเป็นการปิด ใช้เวลาสิ้นสุดที่ขอ
+  let defaultTime = type==='open'
+    ? (r['Start time'] || now.toTimeString().slice(0,5))
+    : (r['Finish time'] || now.toTimeString().slice(0,5));
+
+  document.getElementById('ea-date').value = defaultDate;
+  document.getElementById('ea-time').value = defaultTime;
   const actionSel=document.getElementById('ea-action');
   actionSel.innerHTML=type==='open'?'<option>Open</option><option>Cancel</option>':'<option>Close</option><option>Cancel</option>';
   if(r['Staff Name']){const s=document.getElementById('ea-name');for(let o of s.options){if(o.value===r['Staff Name']){s.value=r['Staff Name'];break;}}}
