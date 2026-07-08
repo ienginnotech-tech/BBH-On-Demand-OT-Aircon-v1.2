@@ -2337,16 +2337,19 @@ function renderCSRows(data, wrap){
     let minCharge  = parseFloat(String(r['Cal_Cost Minimum charge(THB)']||'0').replace(/,/g,''))||0;
     let areaCharge = parseFloat(String(r['Cal_ Cost Area charge OT-AIR(THB)']||'0').replace(/,/g,''))||0;
     let total      = parseFloat(String(r['Total Cost OT.Air(Rate Charge+Area)_THB']||'0').replace(/,/g,''))||0;
-    if(isM && mHrs > 0){
+    // ยังไม่มีพื้นที่เช่าจริง (Engineering ยังไม่เปิด-ปิดแอร์) — ยังคำนวณค่าใช้จ่ายไม่ได้ ให้แสดง "-" แทน
+    const hasActualArea = !!(r['Cal_Rent Area(SQ.M)']);
+    if(isM && mHrs > 0 && hasActualArea){
       const rc = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates).find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
       if(rc){
         // Monthly: แยกคำนวณ จ-ศ vs ส-อ/นักขัตฤกษ์ ตาม Public Holidays ของแต่ละอาคาร
         const split = calcMonthlySplitCharge(r, rc, mHrs);
         areaCharge = split.areaCharge;
         minCharge  = split.minCharge;
-        total = Math.max(minCharge, areaCharge);
+        total = minCharge + areaCharge;
       }
     }
+    const costDash = !hasActualArea;
     const rowBg = isM ? 'background:rgba(0,180,255,.04)' : '';
     return `<tr style="cursor:pointer;${rowBg}" onclick="showCSDetail(${i})">
       <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong>${monthlyBadgeFor(r)}</td>
@@ -2356,9 +2359,9 @@ function renderCSRows(data, wrap){
       <td style="font-size:10px;color:var(--accent)">${(r['Code OT Air_Fee']||r['Code OT Air']||'—').replace('XXXCH_OT_AIR_','')}</td>
       <td style="color:${isM?'#00b4ff':'inherit'}">${hrsDisp}</td>
       <td>${r['Cal_Rent Area(SQ.M)']||'—'} m²</td>
-      <td style="color:var(--amber)">฿${num(minCharge)}</td>
-      <td style="color:var(--accent)">฿${num(areaCharge)}</td>
-      <td><strong style="color:var(--text)">฿${num(total)}</strong></td>
+      <td style="color:var(--amber)">${costDash?'—':'฿'+num(minCharge)}</td>
+      <td style="color:var(--accent)">${costDash?'—':'฿'+num(areaCharge)}</td>
+      <td><strong style="color:var(--text)">${costDash?'—':'฿'+num(total)}</strong></td>
     </tr>`;
   }).join('');
   wrap.innerHTML=`<div class="table-wrap"><table>
@@ -3241,17 +3244,19 @@ function showCSDetail(i){
   let minCharge  = parseFloat(String(r['Cal_Cost Minimum charge(THB)']||'0').replace(/,/g,''))||0;
   let areaCharge = parseFloat(String(r['Cal_ Cost Area charge OT-AIR(THB)']||'0').replace(/,/g,''))||0;
   let total      = parseFloat(String(r['Total Cost OT.Air(Rate Charge+Area)_THB']||'0').replace(/,/g,''))||0;
+  const hasActualArea = !!(r['Cal_Rent Area(SQ.M)']);
   let splitInfo = null;
-  if(isM && mHrs > 0){
+  if(isM && mHrs > 0 && hasActualArea){
     const rc = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates).find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
     if(rc){
       const split = calcMonthlySplitCharge(r, rc, mHrs);
       areaCharge = split.areaCharge;
       minCharge  = split.minCharge;
-      total = Math.max(minCharge, areaCharge);
+      total = minCharge + areaCharge;
       splitInfo = split.breakdown;
     }
   }
+  const costDash = !hasActualArea;
   const splitRows = splitInfo ? `
       <div class="calc-row"><span>จ-ศ (${splitInfo.wdDays} วัน / ${splitInfo.wdHours.toFixed(1)} ชม.)</span><span>฿${num(splitInfo.wdCharge)}</span></div>
       <div class="calc-row"><span>ส-อ/นักขัตฤกษ์ (${splitInfo.weDays} วัน / ${splitInfo.weHours.toFixed(1)} ชม.)</span><span>฿${num(splitInfo.weCharge)}</span></div>` : '';
@@ -3270,9 +3275,13 @@ function showCSDetail(i){
       <div class="calc-row"><span>เวลาเริ่ม → สิ้นสุด</span><span>${r['Start time']||'—'} – ${r['Finish time']||'—'}</span></div>
       <div class="calc-row"><span>รวมเวลา (ชั่วโมง)</span><span style="color:${isM?'#00b4ff':'inherit'}">${hrsLabel}</span></div>
       <div class="calc-row"><span>พื้นที่เช่าจริง</span><span>${r['Cal_Rent Area(SQ.M)']||'—'} m²</span></div>
-      <div class="calc-row"><span>ขั้นต่ำ</span><span>฿${num(minCharge)}</span></div>${splitRows}
+      ${costDash ? `<div class="calc-row"><span>ขั้นต่ำ</span><span>—</span></div>
+      <div class="calc-row"><span>Area Charge</span><span>—</span></div>
+      <div class="calc-row total"><span>รวมทั้งหมด</span><span>—</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">* ยังไม่ได้เปิด-ปิดระบบ Aircon ใน Engineering — ยังคำนวณค่าใช้จ่ายไม่ได้</div>`
+      : `<div class="calc-row"><span>ขั้นต่ำ</span><span>฿${num(minCharge)}</span></div>${splitRows}
       <div class="calc-row"><span>Area Charge${splitInfo?' (รวม)':''}</span><span>฿${num(areaCharge)}</span></div>
-      <div class="calc-row total"><span>รวมทั้งหมด</span><span>฿${num(total)}</span></div>
+      <div class="calc-row total"><span>รวมทั้งหมด</span><span>฿${num(total)}</span></div>`}
     </div>
     <div style="margin-top:12px;font-size:11px;color:var(--text2);background:var(--surface2);border-radius:8px;padding:10px;border-left:3px solid var(--amber)">
       หากพบรายการใดไม่ถูกต้อง กรุณาทักท้วงภายใน 7 วัน
@@ -4065,11 +4074,12 @@ function calcMonthlySplitCharge(r, rc, mHrs){
     const hHourRate = parseFloat(hrc['Addtional charge(THB/Hour)']||0);
     weMinCharge = parseFloat(hrc['Minimum charge(THB)']||0);
     weCharge = hAreaRate>0 ? hAreaRate*area*weHours : (hHourRate>0 ? hHourRate*weHours : 0);
-    if(weMinCharge>0 && weDays>0) weCharge = Math.max(weCharge, weMinCharge);
   }
 
   const areaCharge = wdCharge + weCharge;
-  const combinedMin = Math.max(minCharge, weMinCharge);
+  // ค่าบริการ/ขั้นต่ำ ของแต่ละ Rate Code เป็นค่าบริการที่ "บวกเพิ่ม" ไม่ใช่เพดานขั้นต่ำที่เลือกค่ามากกว่า
+  // จึงบวกรวมเฉพาะส่วนที่มีวันใช้งานจริง (จ-ศ และ ส-อ/นักขัตฤกษ์ อาจมีค่าบริการคนละก้อน)
+  const combinedMin = (wdDays>0 ? minCharge : 0) + (weDays>0 ? weMinCharge : 0);
   return {
     areaCharge,
     minCharge: combinedMin,
