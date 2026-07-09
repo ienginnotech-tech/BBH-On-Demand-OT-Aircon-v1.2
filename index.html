@@ -324,8 +324,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   color:rgba(255,140,0,.35);text-transform:uppercase;letter-spacing:2px;
   display:flex;align-items:center;gap:6px;
 }
+.sidebar-section::before{
+  content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;
+  box-shadow:0 0 6px currentColor;
+}
 .sidebar-section::after{
-  content:'';flex:1;height:1px;background:rgba(255,140,0,.08);
+  content:'';flex:1;height:1px;background:currentColor;opacity:.35;
 }
 
 .nav-item{
@@ -861,6 +865,27 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
       <!-- PAGES -->
       <div id="pages">
 
+        <!-- PAGE: MONITORING (Admin only) -->
+        <div class="page" id="page-monitor">
+          <div class="sh">
+            <div><div class="sh-title">📈 Monitoring Dashboard</div>
+            <div class="sh-sub">ภาพรวมทุกอาคาร เปรียบเทียบรายเดือน — สำหรับ Admin เท่านั้น</div></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <select class="fselect" id="mon-bld" style="width:auto;min-width:110px" onchange="renderMonitoring()">
+                <option value="">ทุกอาคาร</option>
+                <option value="BTE">BTE</option>
+                <option value="BTB">BTB</option>
+                <option value="UBCII">UBCII</option>
+              </select>
+              <select class="fselect" id="mon-month" style="width:auto;min-width:130px" onchange="renderMonitoring()">
+                <option value="">ทุกเดือน</option>
+              </select>
+              <button class="btn btn-p btn-sm" onclick="renderMonitoring()">🔄 รีเฟรช</button>
+            </div>
+          </div>
+          <div id="monitor-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
+        </div>
+
         <!-- PAGE: TENANT -->
         <div class="page" id="page-tenant">
           <div class="sh">
@@ -1103,6 +1128,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                 <div class="settings-nav-item admin-only" onclick="switchSettings('s-password',this)">🔑 Password ระบบ</div>
                 <div class="settings-nav-item admin-only" onclick="switchSettings('s-building',this)">🏢 Building Config</div>
                 <div class="settings-nav-item admin-only" onclick="switchSettings('s-holidays',this)">📅 Public Holidays</div>
+                <div class="settings-nav-item admin-only" onclick="switchSettings('s-monitoring',this)">📈 Monitoring Dashboard</div>
               </div>
               <div>
                 <!-- THEME -->
@@ -1232,6 +1258,13 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                     <button class="btn btn-p btn-sm" onclick="saveHolidays()">💾 บันทึกลง Sheet</button>
                     <span id="holiday-save-status" style="font-size:11px;color:var(--text3);align-self:center"></span>
                   </div>
+                </div>
+
+                <!-- MONITORING DASHBOARD WIDGET TOGGLES -->
+                <div class="settings-panel" id="s-monitoring">
+                  <div style="font-size:13px;font-weight:700;margin-bottom:4px">📈 Monitoring Dashboard — เลือก Widget ที่จะแสดง</div>
+                  <div style="font-size:11px;color:var(--text3);margin-bottom:16px">กำหนดว่าจะเปิดแสดงหัวข้อไหนบ้างในหน้า Monitoring (Admin เท่านั้นที่เห็นหน้านี้และปรับได้)</div>
+                  <div id="mon-widget-settings"></div>
                 </div>
               </div>
             </div>
@@ -1594,32 +1627,40 @@ const _badge = {
   }).length,
 };
 
+const SECTION_COLORS = {
+  'OVERVIEW':          'rgba(167,139,250,.75)',
+  'PROCESS OT-AIR':    'rgba(255,140,0,.75)',
+  'REPORT':            'rgba(34,197,94,.75)',
+  'ADMIN MANAGEMENT':  'rgba(248,81,73,.75)',
+};
+
 const NAV_CONFIG = {
   // 1. TENANT: เห็นแค่หน้าแจ้งคำขอ OT + Settings (Theme only)
   tenant:   [{id:'tenant',   icon:'🏢', label:'OT Request',   badge:()=>gData.tenantReqs.filter(r=>getStatus(r)==='pending').length},
              {id:'settings', icon:'⚙️', label:'Display',        badge:()=>0}],
 
   // 2. CLS: เห็น TENANT / CLS / ENGINEERING / CLS REPORT / SENT TO YARDI + Settings (Theme only)
-  cs:       [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending()},
-             {id:'building', icon:'🏗️', label:'CLS',           badge:()=>_badge.clsPending()},
-             {id:'eng',      icon:'🔧', label:'Engineering',    badge:()=>_badge.engPending()},
-             {id:'cs',       icon:'📊', label:'CLS Report',     badge:()=>0},
-             {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0},
+  cs:       [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending(), section:'PROCESS OT-AIR'},
+             {id:'building', icon:'🏗️', label:'CLS',           badge:()=>_badge.clsPending(), section:'PROCESS OT-AIR'},
+             {id:'eng',      icon:'🔧', label:'Engineering',    badge:()=>_badge.engPending(), section:'PROCESS OT-AIR'},
+             {id:'cs',       icon:'📊', label:'CLS Report',     badge:()=>0, section:'REPORT'},
+             {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0, section:'REPORT'},
              {id:'settings', icon:'⚙️', label:'Display',        badge:()=>0}],
 
   // 3. ENGINEERING: เห็นแค่หน้างาน OT + Settings (Theme only)
   eng:      [{id:'eng',      icon:'🔧', label:'งาน OT',        badge:()=>_badge.engPending()},
              {id:'settings', icon:'⚙️', label:'Display',        badge:()=>0}],
 
-  // 4. ADMIN: เห็นทุกอาคาร ทุกหน้า + Users + Settings
-  admin:    [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending()},
-             {id:'building', icon:'🏗️', label:'CLS',           badge:()=>_badge.clsPending()},
-             {id:'eng',      icon:'🔧', label:'Engineering',    badge:()=>_badge.engPending()},
-             {id:'cs',       icon:'📊', label:'CLS Report',     badge:()=>0},
-             {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0},
-             {id:'db',       icon:'🗄️', label:'Database',      badge:()=>0},
-             {id:'users',    icon:'👥', label:'Users',          badge:()=>getRegisteredUsers().filter(u=>u.status==='pending').length},
-             {id:'settings', icon:'⚙️', label:'Settings',      badge:()=>0}],
+  // 4. ADMIN: เห็นทุกอาคาร ทุกหน้า + Users + Settings + Monitoring Dashboard (บนสุด)
+  admin:    [{id:'monitor',  icon:'📈', label:'Monitoring',     badge:()=>0, section:'OVERVIEW'},
+             {id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending(), section:'PROCESS OT-AIR'},
+             {id:'building', icon:'🏗️', label:'CLS',           badge:()=>_badge.clsPending(), section:'PROCESS OT-AIR'},
+             {id:'eng',      icon:'🔧', label:'Engineering',    badge:()=>_badge.engPending(), section:'PROCESS OT-AIR'},
+             {id:'cs',       icon:'📊', label:'CLS Report',     badge:()=>0, section:'REPORT'},
+             {id:'yadi',     icon:'📤', label:'Sent to YARDI',  badge:()=>0, section:'REPORT'},
+             {id:'db',       icon:'🗄️', label:'Database',      badge:()=>0, section:'ADMIN MANAGEMENT'},
+             {id:'users',    icon:'👥', label:'Users',          badge:()=>getRegisteredUsers().filter(u=>u.status==='pending').length, section:'ADMIN MANAGEMENT'},
+             {id:'settings', icon:'⚙️', label:'Settings',      badge:()=>0, section:'ADMIN MANAGEMENT'}],
 
   // Legacy aliases (ให้ built-in moduleKey เดิมยังใช้ได้)
   building: [{id:'tenant',   icon:'🏢', label:'Tenant',        badge:()=>_badge.tenantPending()},
@@ -1839,13 +1880,27 @@ function buildSidebar(){
   const role = currentRole;
   const navItems = NAV_CONFIG[role]||NAV_CONFIG.cs;
   const nav = document.getElementById('sidebar-nav');
-  nav.innerHTML = `<div class="sidebar-section">MENU</div>`+
-    navItems.map((item,i)=>`
+  let html = '';
+  let lastSection; // undefined ≠ null, กันไม่ให้พลาดตรวจครั้งแรก
+  navItems.forEach((item,i)=>{
+    const sec = item.section || null;
+    if(sec !== lastSection){
+      if(sec){
+        const color = SECTION_COLORS[sec] || 'var(--accent)';
+        html += `<div class="sidebar-section" style="color:${color}">${sec}</div>`;
+      } else if(i===0){
+        html += `<div class="sidebar-section">MENU</div>`;
+      }
+      lastSection = sec;
+    }
+    html += `
       <div class="nav-item ${i===0?'active':''}" onclick="goPage('${item.id}',this)" data-label="${item.label}">
         <span class="nav-icon">${item.icon}</span>
         <span class="nav-label">${item.label}</span>
         ${item.badge&&item.badge()>0?`<span class="nav-badge">${item.badge()}</span>`:''}
-      </div>`).join('');
+      </div>`;
+  });
+  nav.innerHTML = html;
 
   // Go to first page
   goPage(navItems[0].id);
@@ -1904,12 +1959,13 @@ function goPage(id, navEl){
   if(navEl) navEl.classList.add('active');
 
   // Set topbar title
-  const titles={tenant:'🏢 OT Request',building:'🏗️ CLS Assign',
+  const titles={monitor:'📈 Monitoring Dashboard',tenant:'🏢 OT Request',building:'🏗️ CLS Assign',
     eng:'🔧 Engineering OT',cs:'📊 CLS Report',db:'🗄️ Database',users:'👥 Users',settings:'⚙️ Settings'};
   document.getElementById('topbar-title').textContent = titles[id]||'PSD eNGINNo';
   document.getElementById('topbar-sub').textContent = currentBuilding==='ALL'?'All Buildings':'Building: '+currentBuilding;
 
   // Lazy load
+  if(id==='monitor') renderMonitoring();
   if(id==='db' && !dbData.staff.length) loadAllDB();
   if(id==='yadi') initYadiBld();
   if(id==='users') renderUserManagement();
@@ -2248,7 +2304,7 @@ function renderEngRows(data, wrap){
     ...(gData.engWork||[]).filter(r=>r['Engineering Action(Acknowledge/Reject)']==='Reject').map(r=>r['OT-AIR Work Request No.']),
   ]);
   wrap.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>เลขที่</th><th>Bld</th><th>Space</th><th>วันที่ขอเปิด-ปิด</th><th>เวลา Plan</th><th>ช่าง</th><th>Rate Code</th><th>เปิดจริง</th><th>ปิดจริง</th><th>ชม.จริง</th><th>สถานะ</th><th></th></tr></thead>
+    <thead><tr><th>เลขที่</th><th>Bld</th><th>Space</th><th>วันที่ขอเปิด-ปิด</th><th>เวลา Plan</th><th>ช่าง</th><th>Rate Code</th><th>เปิดจริง</th><th>ปิดจริง</th><th>ชม.จริงต่อวัน</th><th>ชั่วโมงรวม</th><th>สถานะ</th><th></th></tr></thead>
     <tbody>${data.map((r,i)=>{
       const isRejected=rejectSet.has(r['OT-AIR Work Request No.']);
       const ack=r['Engineering Action(Acknowledge/Reject)'];
@@ -2299,6 +2355,20 @@ function renderEngRows(data, wrap){
           <span style="color:var(--rose);font-weight:700">${r['Close_OT-Air(Time)']||'—'}</span>
         </td>
         <td>${(r['Cal_Actual_Hours']&&parseFloat(r['Cal_Actual_Hours'])>0)?`<strong style="color:var(--green)">${parseFloat(r['Cal_Actual_Hours']).toFixed(2)} ชม.</strong>`:(r['Open_OT-Air(Time)']&&r['Close_OT-Air(Time)'])?`<strong style="color:var(--green)">${((timeToMin(r['Close_OT-Air(Time)'])-timeToMin(r['Open_OT-Air(Time)'])+1440)%1440/60).toFixed(2)} ชม.</strong>`:'—'}</td>
+        <td>${(()=>{
+          const dailyHrs=(r['Cal_Actual_Hours']&&parseFloat(r['Cal_Actual_Hours'])>0)?parseFloat(r['Cal_Actual_Hours']):((r['Open_OT-Air(Time)']&&r['Close_OT-Air(Time)'])?((timeToMin(r['Close_OT-Air(Time)'])-timeToMin(r['Open_OT-Air(Time)'])+1440)%1440/60):null);
+          if(dailyHrs==null) return '—';
+          const tRow=gData.tenantReqs.find(t=>t['OT-AIR Work Request No.']===r['OT-AIR Work Request No.']);
+          const isMEng=!!(tRow&&((tRow['Remark']||'').startsWith('[MONTHLY')||tRow['Monthly_Total_Hours']));
+          if(!isMEng) return '<span style="color:var(--text3)">—</span>';
+          let dayCount=parseMonthlyDayCount(tRow['Remark']);
+          if(!dayCount){
+            const {sd,ed}=parseMonthlyDateRange(tRow);
+            if(sd&&ed){const d1=new Date(sd+'T00:00:00'),d2=new Date(ed+'T00:00:00');if(!isNaN(d1)&&!isNaN(d2)&&d2>=d1)dayCount=Math.round((d2-d1)/86400000)+1;}
+          }
+          if(!dayCount) return '—';
+          return `<strong style="color:#00b4ff">${(dailyHrs*dayCount).toFixed(2)} ชม.</strong><div style="font-size:9px;color:var(--text3)">${dailyHrs.toFixed(2)} × ${dayCount} วัน</div>`;
+        })()}</td>
         <td>${stTag}</td>
         <td style="white-space:nowrap">${action}</td>
       </tr>`;
@@ -2333,7 +2403,7 @@ function renderCSRows(data, wrap){
     let mHrs = parseFloat(r['Monthly_Total_Hours']||0);
     if(!mHrs && isM) mHrs = parseMonthlyHours(r['Remark']||'');
     const hrs = (isM && mHrs > 0) ? mHrs : rawHrs;
-    const hrsDisp = hrs.toFixed(2)+' ชม.';
+    const hrsDisp = hrs.toFixed(2)+' ชม.'+(isM?' (รวมเดือน)':'');
     let minCharge  = parseFloat(String(r['Cal_Cost Minimum charge(THB)']||'0').replace(/,/g,''))||0;
     let areaCharge = parseFloat(String(r['Cal_ Cost Area charge OT-AIR(THB)']||'0').replace(/,/g,''))||0;
     let total      = parseFloat(String(r['Total Cost OT.Air(Rate Charge+Area)_THB']||'0').replace(/,/g,''))||0;
@@ -3685,6 +3755,7 @@ function isWeekday(dateStr, bld){
 function renderSettings(){
   loadHolidays().then(()=>renderHolidayList());
   switchHolidayBld('BTE', document.getElementById('hbtn-BTE'));
+  if(currentRole === 'admin') renderMonDashboardSettings();
   // ซ่อน admin-only menu สำหรับ non-admin
   const nav = document.getElementById('settings-nav-wrap');
   if(nav){
@@ -4516,6 +4587,377 @@ function exportYADI_Full() {
   a.download = 'Sent_to_YARDI_Full_'+mth+'.csv';
   a.click();
   toast('⬇ Export Full CSV เรียบร้อย');
+}
+
+// ============================================================
+// MONITORING DASHBOARD (Admin only)
+// ============================================================
+const MON_WIDGETS = [
+  {id:'w1', label:'1. ยอดคำขอ OT Air ทั้งหมด / Pending / Acknowledge'},
+  {id:'w2', label:'2. จำนวนชั่วโมงที่ขอ เทียบกับจำนวนที่ขอจริง'},
+  {id:'w3', label:'3. จำนวนมอบหมายช่างแล้ว และจำนวนแจ้งซ้ำ/ยกเลิก'},
+  {id:'w4', label:'4. จำนวนครั้งกำลังเปิดแอร์ และปิดแอร์แล้ว'},
+  {id:'w5', label:'5. จำนวนชั่วโมงเปิดจริงรวม'},
+  {id:'w6', label:'6. จำนวน Level (Normal / Special)'},
+  {id:'w7', label:'7. ค่า OT-Air รวม เรียงตามบริษัท/พื้นที่'},
+  {id:'w8', label:'8. Prediction แนวโน้มรายได้ รายเดือน/รายปี'},
+];
+function getMonWidgetConfig(){
+  try{ const s=localStorage.getItem('bbh_dashboard_widgets'); if(s) return Object.assign(_monDefaultCfg(),JSON.parse(s)); }catch(e){}
+  return _monDefaultCfg();
+}
+function _monDefaultCfg(){ const c={}; MON_WIDGETS.forEach(w=>c[w.id]=true); return c; }
+function saveMonWidgetConfig(cfg){ try{ localStorage.setItem('bbh_dashboard_widgets', JSON.stringify(cfg)); }catch(e){} }
+
+// ---- lightweight SVG chart helpers (ไม่พึ่ง library ภายนอก ใช้สี CSS var ของธีมปัจจุบัน) ----
+function svgBarChart(items, opt){
+  opt = opt||{};
+  const w = opt.width||560, h = opt.height||220, pad = 34;
+  const max = Math.max(1, ...items.map(d=>d.value));
+  const bw = (w-pad*2) / items.length;
+  const colors = opt.colors || ['var(--accent)','var(--green)','var(--purple)','var(--rose)'];
+  let bars='', labels='';
+  items.forEach((d,i)=>{
+    const bh = Math.round((d.value/max) * (h-pad*2));
+    const x = pad + i*bw + bw*0.18;
+    const bwFinal = bw*0.64;
+    const y = h-pad-bh;
+    const color = d.color || colors[i%colors.length];
+    bars += `<rect x="${x}" y="${y}" width="${bwFinal}" height="${bh}" rx="4" fill="${color}" opacity="0.9"/>`;
+    bars += `<text x="${x+bwFinal/2}" y="${y-6}" text-anchor="middle" font-size="11" fill="var(--text)" font-weight="700">${opt.fmt?opt.fmt(d.value):d.value}</text>`;
+    labels += `<text x="${x+bwFinal/2}" y="${h-pad+16}" text-anchor="middle" font-size="10" fill="var(--text2)">${d.label}</text>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h+10}" style="width:100%;height:auto;max-width:${w}px">
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="var(--border2)" stroke-width="1"/>
+    ${bars}${labels}
+  </svg>`;
+}
+function svgGroupedBarChart(items, opt){
+  // items: [{label, values:[{value,color,name}]}]
+  opt = opt||{};
+  const w = opt.width||560, h = opt.height||220, pad = 34;
+  const allVals = items.flatMap(d=>d.values.map(v=>v.value));
+  const max = Math.max(1, ...allVals);
+  const groupW = (w-pad*2) / items.length;
+  let bars='', labels='';
+  items.forEach((d,i)=>{
+    const n = d.values.length;
+    const gw = groupW*0.72, gx = pad + i*groupW + groupW*0.14;
+    const bw = gw/n;
+    d.values.forEach((v,j)=>{
+      const bh = Math.round((v.value/max)*(h-pad*2));
+      const x = gx + j*bw + bw*0.08;
+      const bwFinal = bw*0.84;
+      const y = h-pad-bh;
+      bars += `<rect x="${x}" y="${y}" width="${bwFinal}" height="${bh}" rx="3" fill="${v.color}" opacity="0.9"/>`;
+      bars += `<text x="${x+bwFinal/2}" y="${y-4}" text-anchor="middle" font-size="9" fill="var(--text)" font-weight="700">${v.value.toFixed?v.value.toFixed(1):v.value}</text>`;
+    });
+    labels += `<text x="${gx+gw/2}" y="${h-pad+16}" text-anchor="middle" font-size="10" fill="var(--text2)">${d.label}</text>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h+10}" style="width:100%;height:auto;max-width:${w}px">
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="var(--border2)" stroke-width="1"/>
+    ${bars}${labels}
+  </svg>`;
+}
+function svgPieChart(items, opt){
+  // items: [{label, value, color}]
+  opt = opt||{};
+  const size = opt.size||160, r = size/2-8, cx=size/2, cy=size/2;
+  const total = items.reduce((s,d)=>s+d.value,0) || 1;
+  let angle = -90, paths='';
+  items.forEach(d=>{
+    const slice = (d.value/total)*360;
+    const a1 = angle*Math.PI/180, a2 = (angle+slice)*Math.PI/180;
+    const x1 = cx+r*Math.cos(a1), y1 = cy+r*Math.sin(a1);
+    const x2 = cx+r*Math.cos(a2), y2 = cy+r*Math.sin(a2);
+    const large = slice>180?1:0;
+    paths += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} Z" fill="${d.color}" opacity="0.9"><title>${d.label}: ${d.value}</title></path>`;
+    angle += slice;
+  });
+  const legend = items.map(d=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)"><span style="width:9px;height:9px;border-radius:2px;background:${d.color};display:inline-block"></span>${d.label}: <strong style="color:var(--text)">${d.value}</strong> (${total?((d.value/total)*100).toFixed(0):0}%)</div>`).join('');
+  return `<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <svg viewBox="0 0 ${size} ${size}" style="width:${size}px;height:${size}px;flex-shrink:0">${paths}</svg>
+    <div style="display:flex;flex-direction:column;gap:6px">${legend}</div>
+  </div>`;
+}
+
+function _monPopulateMonths(){
+  const sel = document.getElementById('mon-month');
+  if(!sel || sel.dataset.filled) return;
+  const months = new Set();
+  (gData.csReport||[]).forEach(r=>{
+    const d = String(r['Date']||'');
+    const m = d.match(/(\d{4})-(\d{2})-(\d{2})/) || d.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if(m){
+      let ym = m[1].length===4 ? m[1]+'-'+m[2] : m[3]+'-'+m[2];
+      months.add(ym);
+    }
+  });
+  Array.from(months).sort().reverse().forEach(ym=>{
+    const opt = document.createElement('option'); opt.value=ym; opt.textContent=ym; sel.appendChild(opt);
+  });
+  sel.dataset.filled='1';
+}
+
+function renderMonitoring(){
+  const wrap = document.getElementById('monitor-wrap');
+  if(!wrap) return;
+  _monPopulateMonths();
+  const cfg = getMonWidgetConfig();
+  const bldFilter = document.getElementById('mon-bld')?.value || '';
+  const monthFilter = document.getElementById('mon-month')?.value || '';
+
+  const matchDate = (r) => {
+    if(!monthFilter) return true;
+    const d = String(r['Date']||'');
+    return d.includes(monthFilter) || d.startsWith(monthFilter);
+  };
+  const tReqs = (gData.tenantReqs||[]).filter(r=>(!bldFilter||r['Building']===bldFilter) && matchDate(r));
+  const bAssigns = (gData.buildingAssigns||[]).filter(r=>(!bldFilter||r['Building']===bldFilter));
+  const eWork = (gData.engWork||[]).filter(r=>(!bldFilter||r['Building']===bldFilter));
+  const csRows = (gData.csReport||[]).filter(r=>(!bldFilter||r['Building']===bldFilter) && matchDate(r));
+
+  let html = '';
+
+  // Widget 1: ยอดคำขอทั้งหมด / Pending / Acknowledge
+  if(cfg.w1){
+    const total = tReqs.length;
+    const pending = tReqs.filter(r=>getStatus(r)==='pending').length;
+    const ack = tReqs.filter(r=>getStatus(r)==='acknowledged').length;
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title"><div class="card-title-icon">📋</div>1. ยอดคำขอ OT Air</div></div>
+      <div class="stats-grid" style="padding:14px">
+        <div class="stat-card"><div class="stat-num" style="color:var(--accent)">${total}</div><div class="stat-label">คำขอทั้งหมด</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${pending}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${ack}</div><div class="stat-label">Acknowledge</div></div>
+      </div>
+    </div>`;
+  }
+
+  // Widget 2: ชั่วโมงที่ขอ vs ชั่วโมงจริง (แยกตามอาคาร)
+  if(cfg.w2){
+    const bldList = bldFilter ? [bldFilter] : ['BTE','BTB','UBCII'];
+    const grouped = bldList.map(b=>{
+      const rows = csRows.filter(r=>r['Building']===b);
+      let reqHrs=0, actHrs=0;
+      rows.forEach(r=>{
+        const isM = !!(r['Monthly_Total_Hours']||(r['Remark']||'').startsWith('[MONTHLY'));
+        let mHrs = parseFloat(r['Monthly_Total_Hours']||0); if(!mHrs&&isM) mHrs=parseMonthlyHours(r['Remark']||'');
+        const rawHrs = parseFloat(r['Convers time(hour)']||0);
+        reqHrs += (isM&&mHrs>0)?mHrs:rawHrs;
+        actHrs += parseFloat(r['Cal_Actual_Hours']||0)||0;
+      });
+      return {label:b, values:[{value:reqHrs,color:'var(--accent)',name:'ขอ'},{value:actHrs,color:'var(--green)',name:'จริง'}]};
+    });
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title"><div class="card-title-icon">⏱️</div>2. ชั่วโมงที่ขอ เทียบกับชั่วโมงที่ใช้จริง</div></div>
+      <div style="padding:14px">
+        <div style="display:flex;gap:14px;margin-bottom:8px;font-size:11px">
+          <span style="color:var(--accent)">■ ชั่วโมงที่ขอ</span><span style="color:var(--green)">■ ชั่วโมงจริง</span>
+        </div>
+        ${svgGroupedBarChart(grouped,{height:200})}
+      </div>
+    </div>`;
+  }
+
+  // Widget 3: มอบหมายช่างแล้ว vs แจ้งซ้ำ/ยกเลิก
+  if(cfg.w3){
+    const assigned = bAssigns.filter(r=>r['Staff Name']).length;
+    const rejectSet = new Set([
+      ...bAssigns.filter(r=>String(r['Admin helpdesk (Acknowledge/Reject)']||'').toLowerCase()==='reject').map(r=>r['OT-AIR Work Request No.']),
+      ...eWork.filter(r=>r['Engineering Action(Acknowledge/Reject)']==='Reject').map(r=>r['OT-AIR Work Request No.']),
+    ]);
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title"><div class="card-title-icon">👷</div>3. มอบหมายช่าง / แจ้งซ้ำ-ยกเลิก</div></div>
+      <div class="stats-grid" style="padding:14px">
+        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${assigned}</div><div class="stat-label">มอบหมายช่างแล้ว</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--rose)">${rejectSet.size}</div><div class="stat-label">แจ้งซ้ำ/ยกเลิก</div></div>
+      </div>
+    </div>`;
+  }
+
+  // Widget 4: กำลังเปิด vs ปิดแล้ว
+  if(cfg.w4){
+    const opening = eWork.filter(r=>r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)']).length;
+    const closed = eWork.filter(r=>r['Close_OT-Air(Time)']).length;
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title"><div class="card-title-icon">❄️</div>4. สถานะเปิด-ปิดแอร์</div></div>
+      <div class="stats-grid" style="padding:14px">
+        <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${opening}</div><div class="stat-label">กำลังเปิด</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${closed}</div><div class="stat-label">ปิดแล้ว</div></div>
+      </div>
+    </div>`;
+  }
+
+  // Widget 5: ชั่วโมงเปิดจริงรวม
+  if(cfg.w5){
+    let totalActual = 0;
+    eWork.forEach(r=>{
+      if(r['Cal_Actual_Hours']) totalActual += parseFloat(r['Cal_Actual_Hours'])||0;
+      else if(r['Open_OT-Air(Time)']&&r['Close_OT-Air(Time)']) totalActual += ((timeToMin(r['Close_OT-Air(Time)'])-timeToMin(r['Open_OT-Air(Time)'])+1440)%1440/60);
+    });
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title"><div class="card-title-icon">🕐</div>5. ชั่วโมงเปิดจริงรวม</div></div>
+      <div class="stats-grid" style="padding:14px">
+        <div class="stat-card"><div class="stat-num" style="color:var(--accent)">${totalActual.toFixed(2)}</div><div class="stat-label">ชั่วโมงรวมทั้งหมด</div></div>
+      </div>
+    </div>`;
+  }
+
+  // Widget 6: Level Normal/Special
+  if(cfg.w6){
+    const rcList = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates);
+    let normalCnt=0, specialCnt=0;
+    csRows.forEach(r=>{
+      const rc = rcList.find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
+      if(!rc) return;
+      if((rc['Tenant_Level Charge']||'Normal')==='Special') specialCnt++; else normalCnt++;
+    });
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title"><div class="card-title-icon">⭐</div>6. Level (Normal / Special)</div></div>
+      <div style="padding:14px">
+        ${svgPieChart([{label:'Normal',value:normalCnt,color:'#34d399'},{label:'Special',value:specialCnt,color:'#f472b6'}],{size:150})}
+      </div>
+    </div>`;
+  }
+
+  // Widget 7: ค่า OT-Air รวม เรียงบริษัท/พื้นที่
+  if(cfg.w7){
+    const byCompany = {}, bySpace = {};
+    csRows.forEach(r=>{
+      const isM = !!(r['Monthly_Total_Hours']||(r['Remark']||'').startsWith('[MONTHLY'));
+      const rawHrs = parseFloat(r['Convers time(hour)']||0);
+      let mHrs = parseFloat(r['Monthly_Total_Hours']||0); if(!mHrs&&isM) mHrs=parseMonthlyHours(r['Remark']||'');
+      const hrs = (isM&&mHrs>0)?mHrs:rawHrs;
+      const hasArea = !!(r['Cal_Rent Area(SQ.M)']);
+      let total = parseFloat(String(r['Total Cost OT.Air(Rate Charge+Area)_THB']||'0').replace(/,/g,''))||0;
+      if(hasArea){
+        const rcList = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates);
+        const rc = rcList.find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
+        if(rc){
+          if(isM&&mHrs>0){ const m=calcMonthlyCharge(r,rc,mHrs); total=m.minCharge+m.areaCharge; }
+          else if(!isM){ const d=calcDailyCharge(r,rc,hrs); total=d.total; }
+        }
+      } else total = 0;
+      const co = r['Name']||'ไม่ระบุ';
+      const sp = (r['Building']||'')+' / '+(r['Space']||'ไม่ระบุ');
+      byCompany[co] = (byCompany[co]||0)+total;
+      bySpace[sp] = (bySpace[sp]||0)+total;
+    });
+    const topCompany = Object.entries(byCompany).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const topSpace = Object.entries(bySpace).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const grandTotal = Object.values(byCompany).reduce((s,v)=>s+v,0);
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title"><div class="card-title-icon">💰</div>7. ค่า OT-Air รวม — เรียงบริษัท/พื้นที่มากไปน้อย</div></div>
+      <div style="padding:14px">
+        <div class="stat-card" style="margin-bottom:14px"><div class="stat-num" style="color:var(--purple)">฿${num(grandTotal)}</div><div class="stat-label">ยอดรวมทั้งหมด</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">เรียงตามบริษัท (Top 10)</div>
+            <div class="table-wrap"><table><thead><tr><th>บริษัท</th><th style="text-align:right">฿</th></tr></thead><tbody>
+              ${topCompany.map(([n,v])=>`<tr><td style="font-size:11px">${n}</td><td style="text-align:right;color:var(--accent)">฿${num(v)}</td></tr>`).join('')||'<tr><td colspan="2">ไม่มีข้อมูล</td></tr>'}
+            </tbody></table></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">เรียงตามพื้นที่ (Top 10)</div>
+            <div class="table-wrap"><table><thead><tr><th>พื้นที่</th><th style="text-align:right">฿</th></tr></thead><tbody>
+              ${topSpace.map(([n,v])=>`<tr><td style="font-size:11px">${n}</td><td style="text-align:right;color:var(--accent)">฿${num(v)}</td></tr>`).join('')||'<tr><td colspan="2">ไม่มีข้อมูล</td></tr>'}
+            </tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Widget 8: Prediction รายเดือน/รายปี
+  if(cfg.w8){
+    // รวมยอดค่าใช้จ่ายรายเดือนจากข้อมูลจริงทั้งหมด (ไม่กรองเดือน เพื่อดู trend)
+    const monthlyTotals = {};
+    (gData.csReport||[]).filter(r=>!bldFilter||r['Building']===bldFilter).forEach(r=>{
+      const d = String(r['Date']||''); const m = d.match(/(\d{4})-(\d{2})/) || d.match(/\d{2}\/(\d{2})\/(\d{4})/);
+      let ym = null;
+      if(m){ ym = m[0].includes('/') ? (m[2]+'-'+m[1]) : m[0]; }
+      if(!ym) return;
+      const hasArea = !!(r['Cal_Rent Area(SQ.M)']);
+      if(!hasArea) return;
+      const isM = !!(r['Monthly_Total_Hours']||(r['Remark']||'').startsWith('[MONTHLY'));
+      const rawHrs = parseFloat(r['Convers time(hour)']||0);
+      let mHrs = parseFloat(r['Monthly_Total_Hours']||0); if(!mHrs&&isM) mHrs=parseMonthlyHours(r['Remark']||'');
+      const hrs = (isM&&mHrs>0)?mHrs:rawHrs;
+      const rcList = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates);
+      const rc = rcList.find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
+      let total = 0;
+      if(rc){
+        if(isM&&mHrs>0){ const m2=calcMonthlyCharge(r,rc,mHrs); total=m2.minCharge+m2.areaCharge; }
+        else if(!isM){ const d2=calcDailyCharge(r,rc,hrs); total=d2.total; }
+      }
+      monthlyTotals[ym] = (monthlyTotals[ym]||0)+total;
+    });
+    const sortedMonths = Object.keys(monthlyTotals).sort();
+    const last6 = sortedMonths.slice(-6);
+    const avgLast3 = last6.length ? last6.slice(-3).reduce((s,m)=>s+monthlyTotals[m],0)/Math.min(3,last6.length) : 0;
+    // growth rate จากค่าเฉลี่ยเทียบเดือนก่อนหน้า (ถ้ามีข้อมูลพอ)
+    let growthRate = 0;
+    if(last6.length>=2){
+      const half = Math.floor(last6.length/2);
+      const firstHalfAvg = last6.slice(0,half).reduce((s,m)=>s+monthlyTotals[m],0)/half;
+      const secondHalfAvg = last6.slice(half).reduce((s,m)=>s+monthlyTotals[m],0)/(last6.length-half);
+      if(firstHalfAvg>0) growthRate = (secondHalfAvg-firstHalfAvg)/firstHalfAvg/Math.max(1,half);
+    }
+    growthRate = Math.max(-0.3, Math.min(0.3, growthRate)); // กันค่าพุ่งเกินจริง
+    // Projection 6 เดือนข้างหน้า
+    const lastYM = sortedMonths.length ? sortedMonths[sortedMonths.length-1] : null;
+    let projRows = '';
+    let base = avgLast3 || (sortedMonths.length ? monthlyTotals[sortedMonths[sortedMonths.length-1]] : 0);
+    let py = lastYM ? parseInt(lastYM.split('-')[0]) : new Date().getFullYear();
+    let pm = lastYM ? parseInt(lastYM.split('-')[1]) : new Date().getMonth()+1;
+    let yearTotal = 0;
+    for(let i=1;i<=6;i++){
+      pm++; if(pm>12){pm=1;py++;}
+      base = base*(1+growthRate);
+      yearTotal += base;
+      projRows += `<tr><td>${py}-${String(pm).padStart(2,'0')}</td><td style="text-align:right;color:var(--purple)">฿${num(base)}</td></tr>`;
+    }
+    const yearProjectionFull = base*12; // ประมาณการรายปีแบบง่าย (เฉลี่ยเดือนสุดท้าย × 12)
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title"><div class="card-title-icon">📈</div>8. Prediction แนวโน้มรายได้ OT-AIR</div></div>
+      <div style="padding:14px">
+        ${sortedMonths.length<2 ? `<div style="color:var(--text3);font-size:12px">ข้อมูลย้อนหลังยังไม่พอสำหรับพยากรณ์ (ต้องมีอย่างน้อย 2 เดือน) — แสดงยอดที่มีอยู่แทน</div>` : ''}
+        ${sortedMonths.length ? svgBarChart(sortedMonths.slice(-6).map(m=>({label:m,value:Math.round(monthlyTotals[m])})),{height:180,fmt:v=>'฿'+num(v)}) : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">พยากรณ์ 6 เดือนข้างหน้า (แนวโน้ม ${(growthRate*100).toFixed(1)}%/เดือน)</div>
+            <div class="table-wrap"><table><thead><tr><th>เดือน</th><th style="text-align:right">คาดการณ์ (฿)</th></tr></thead><tbody>${projRows}</tbody></table></div>
+          </div>
+          <div>
+            <div class="stat-card" style="margin-bottom:10px"><div class="stat-num" style="color:var(--purple);font-size:20px">฿${num(yearTotal)}</div><div class="stat-label">รวมคาดการณ์ 6 เดือนข้างหน้า</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--purple);font-size:20px">฿${num(yearProjectionFull)}</div><div class="stat-label">ประมาณการรายได้ต่อปี (12 เดือน)</div></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:8px">* คำนวณจากค่าเฉลี่ยย้อนหลัง + แนวโน้มการเติบโต ใช้เพื่อการวางแผนการตลาดเบื้องต้น ไม่ใช่ตัวเลขยืนยัน</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  wrap.innerHTML = html || emptyState('ไม่มี Widget ที่เปิดแสดงผล — ไปที่ Settings เพื่อเปิดใช้งาน');
+}
+
+// ---- Settings: เลือกว่าจะแสดง Widget ไหนใน Monitoring Dashboard (Admin เท่านั้น) ----
+function renderMonDashboardSettings(){
+  const el = document.getElementById('mon-widget-settings');
+  if(!el) return;
+  const cfg = getMonWidgetConfig();
+  el.innerHTML = MON_WIDGETS.map(w=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:12px;color:var(--text2);cursor:pointer">
+      <input type="checkbox" ${cfg[w.id]?'checked':''} onchange="toggleMonWidget('${w.id}',this.checked)">
+      ${w.label}
+    </label>`).join('');
+}
+function toggleMonWidget(id, checked){
+  const cfg = getMonWidgetConfig();
+  cfg[id] = checked;
+  saveMonWidgetConfig(cfg);
+  toast(checked ? '✅ เปิดแสดง Widget แล้ว' : '🚫 ซ่อน Widget แล้ว');
 }
 
 </script>
