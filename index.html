@@ -1791,7 +1791,7 @@ async function submitRegister(){
         pass=v('reg-pass'),note=v('reg-note');
   if(!username||!name||!email||!bld||!role||!pass){showAuthErr('reg-err','กรุณากรอกข้อมูลให้ครบ');return;}
   // ตรวจ username ซ้ำ
-  const existing = getRegisteredUsers().find(u=>(u.username||'').toLowerCase()===username.toLowerCase());
+  const existing = getRegisteredUsers().find(u=>(u.username||u.name||'').toLowerCase()===username.toLowerCase());
   if(existing){showAuthErr('reg-err','Username นี้มีผู้ใช้แล้ว กรุณาเลือกใหม่');return;}
   const moduleKey=role+'-'+bld;
   const newUser={id:Date.now(),username,name,company,email,tel,building:bld,role,moduleKey,password:pass,note,status:'pending',createdAt:new Date().toISOString()};
@@ -2342,10 +2342,10 @@ function renderCSRows(data, wrap){
     const rc = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates).find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
     if(hasActualArea && rc){
       if(isM && mHrs > 0){
-        // Monthly: แยกคำนวณ จ-ศ vs ส-อ/นักขัตฤกษ์ ตาม Public Holidays ของแต่ละอาคาร
-        const split = calcMonthlySplitCharge(r, rc, mHrs);
-        areaCharge = split.areaCharge;
-        minCharge  = split.minCharge;
+        // Monthly: ใช้ Rate Code เดียวที่ Admin เลือกไว้ตรงๆ — ขั้นต่ำคิดคูณตามจำนวนวันที่ขอใช้งานจริง
+        const monthly = calcMonthlyCharge(r, rc, mHrs);
+        areaCharge = monthly.areaCharge;
+        minCharge  = monthly.minCharge;
         total = minCharge + areaCharge;
       } else if(!isM){
         // OT รายวัน — คำนวณเองในเว็บแทนการอ่านจาก Sheet กันปัญหาสูตร/ค่าตายในชีตผิดพลาด
@@ -3251,15 +3251,16 @@ function showCSDetail(i){
   let areaCharge = parseFloat(String(r['Cal_ Cost Area charge OT-AIR(THB)']||'0').replace(/,/g,''))||0;
   let total      = parseFloat(String(r['Total Cost OT.Air(Rate Charge+Area)_THB']||'0').replace(/,/g,''))||0;
   const hasActualArea = !!(r['Cal_Rent Area(SQ.M)']);
-  let splitInfo = null;
+  let dayInfo = null;
   const rc = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates).find(x=>x['Code OT Air']===(r['Code OT Air_Fee']||r['Code OT Air']));
   if(hasActualArea && rc){
     if(isM && mHrs > 0){
-      const split = calcMonthlySplitCharge(r, rc, mHrs);
-      areaCharge = split.areaCharge;
-      minCharge  = split.minCharge;
+      // Monthly: ใช้ Rate Code เดียวที่ Admin เลือกไว้ตรงๆ — ขั้นต่ำคิดคูณตามจำนวนวันที่ขอใช้งานจริง
+      const monthly = calcMonthlyCharge(r, rc, mHrs);
+      areaCharge = monthly.areaCharge;
+      minCharge  = monthly.minCharge;
       total = minCharge + areaCharge;
-      splitInfo = split.breakdown;
+      if(monthly.minChargePerDay > 0 && monthly.dayCount > 0) dayInfo = monthly;
     } else if(!isM){
       // OT รายวัน — คำนวณเองในเว็บแทนการอ่านจาก Sheet กันปัญหาสูตร/ค่าตายในชีตผิดพลาด
       const daily = calcDailyCharge(r, rc, hrs);
@@ -3269,9 +3270,7 @@ function showCSDetail(i){
     }
   }
   const costDash = !hasActualArea;
-  const splitRows = splitInfo ? `
-      <div class="calc-row"><span>จ-ศ (${splitInfo.wdDays} วัน / ${splitInfo.wdHours.toFixed(1)} ชม.)</span><span>฿${num(splitInfo.wdCharge)}</span></div>
-      <div class="calc-row"><span>ส-อ/นักขัตฤกษ์ (${splitInfo.weDays} วัน / ${splitInfo.weHours.toFixed(1)} ชม.)</span><span>฿${num(splitInfo.weCharge)}</span></div>` : '';
+  const minChargeLabel = dayInfo ? `ขั้นต่ำ (฿${num(dayInfo.minChargePerDay)} × ${dayInfo.dayCount} วัน)` : 'ขั้นต่ำ';
   document.getElementById('detail-title').firstChild.textContent='🧾 รายละเอียดการคำนวณ ';
   document.getElementById('detail-content').innerHTML=`
     <div class="irow" style="margin-bottom:12px">
@@ -3291,8 +3290,8 @@ function showCSDetail(i){
       <div class="calc-row"><span>Area Charge</span><span>—</span></div>
       <div class="calc-row total"><span>รวมทั้งหมด</span><span>—</span></div>
       <div style="font-size:10px;color:var(--text3);margin-top:4px">* ยังไม่ได้เปิด-ปิดระบบ Aircon ใน Engineering — ยังคำนวณค่าใช้จ่ายไม่ได้</div>`
-      : `<div class="calc-row"><span>ขั้นต่ำ</span><span>฿${num(minCharge)}</span></div>${splitRows}
-      <div class="calc-row"><span>Area Charge${splitInfo?' (รวม)':''}</span><span>฿${num(areaCharge)}</span></div>
+      : `<div class="calc-row"><span>${minChargeLabel}</span><span>฿${num(minCharge)}</span></div>
+      <div class="calc-row"><span>Area Charge</span><span>฿${num(areaCharge)}</span></div>
       <div class="calc-row total"><span>รวมทั้งหมด</span><span>฿${num(total)}</span></div>`}
     </div>
     <div style="margin-top:12px;font-size:11px;color:var(--text2);background:var(--surface2);border-radius:8px;padding:10px;border-left:3px solid var(--amber)">
@@ -4012,16 +4011,16 @@ function parseMonthlyHours(remark){
 }
 
 // ============================================================
-// MONTHLY RATE — แยก จ-ศ vs ส-อ/นักขัตฤกษ์
+// MONTHLY RATE — คำนวณด้วย Rate Code เดียวที่ Admin เลือกไว้ตรงๆ ไม่มีการสลับ/แทนที่ Rate Code ใดๆ ทั้งสิ้น
+// จุดสำคัญ: ถ้า Rate Code นั้นมี "ขั้นต่ำ/ค่าบริการ" (Minimum charge) จะคิด "ต่อวัน" ที่มีการขอใช้งาน
+// ไม่ใช่คิดครั้งเดียวตลอดทั้งเดือน — เช่น ขั้นต่ำ 2,000 บาท ใช้ 5 วัน = 2,000 × 5 = 10,000 บาท
 // ============================================================
-// Rate Code ที่ใช้คิดค่าใช้จ่ายส่วน เสาร์-อาทิตย์-นักขัตฤกษ์ ต่ออาคาร
-// (ส่วน จ-ศ ใช้ Rate Code ที่ Admin เลือกไว้ตามปกติ — "Code OT Air_Fee")
-// UBCII ไม่มีการแยก Rate (ใช้อัตราเดียวกันทั้งเดือนตามเดิม)
-const MONTHLY_HOLIDAY_RATE_CODE = {
-  BTE: 'XXXCH_OT_AIR_BTE_H02',
-  BTB: 'XXXCH_OT_AIR_BTB_H01N',
-  UBCII: null,
-};
+
+// ดึงจำนวนวันจาก Remark เช่น "[MONTHLY ... | 31 วัน × 4.0 ชม. = 124.0 ชม.รวม]" -> 31
+function parseMonthlyDayCount(remark){
+  try{ const m=String(remark||'').match(/(\d+)\s*วัน\s*[×xX]/); if(m) return parseInt(m[1])||0; }catch(e){}
+  return 0;
+}
 
 // ดึงช่วงวันที่ (เริ่ม-สิ้นสุด) ของคำขอ Monthly จากฟิลด์ตรงๆ ก่อน แล้วค่อย fallback ไปพาร์สจาก Remark
 function parseMonthlyDateRange(r){
@@ -4033,20 +4032,7 @@ function parseMonthlyDateRange(r){
   return {sd:'', ed:''};
 }
 
-// นับจำนวนวัน จ-ศ (weekday) กับ ส-อ/นักขัตฤกษ์ (weekend) ในช่วงวันที่ที่กำหนด สำหรับอาคารนั้นๆ
-function countMonthlyDayTypes(sd, ed, bld){
-  let weekday=0, weekend=0;
-  if(!sd || !ed) return {weekday, weekend, total:0};
-  const d1 = new Date(sd+'T00:00:00'), d2 = new Date(ed+'T00:00:00');
-  if(isNaN(d1)||isNaN(d2)||d2<d1) return {weekday, weekend, total:0};
-  for(let d=new Date(d1); d<=d2; d.setDate(d.getDate()+1)){
-    const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    if(isWeekendOrHoliday(ds, bld)) weekend++; else weekday++;
-  }
-  return {weekday, weekend, total: weekday+weekend};
-}
-
-// คำนวณค่าใช้จ่ายพื้นฐานจาก Rate Code เดียว (ใช้ทั้งกับ Monthly แบบไม่แยก และ OT รายวันทั่วไป)
+// คำนวณค่าใช้จ่ายพื้นฐานจาก Rate Code เดียว (ใช้ทั้งกับ Monthly และ OT รายวันทั่วไป)
 function calcBaseCharge(r, rc, hrs){
   const hrRate = parseFloat(rc['Addtional charge(THB/Hour)']||0);
   const mRate  = parseFloat(rc['Addtional charge(THB/Month)']||0);
@@ -4067,53 +4053,20 @@ function calcDailyCharge(r, rc, hrs){
   return { areaCharge, minCharge, total: minCharge + areaCharge };
 }
 
-// คำนวณค่าใช้จ่าย Monthly โดยแยก จ-ศ (rc ปกติ) กับ ส-อ/นักขัตฤกษ์ (Rate Code เฉพาะของอาคาร)
-// คืนค่า {areaCharge, minCharge, breakdown} — breakdown เป็น null ถ้าอาคารนั้นไม่มีการแยก (เช่น UBCII)
-function calcMonthlySplitCharge(r, rc, mHrs){
-  const bld = r['Building']||'';
-  const holidayCode = MONTHLY_HOLIDAY_RATE_CODE[bld];
-  const {sd, ed} = parseMonthlyDateRange(r);
-  const totalDaysInRange = (sd && ed) ? (Math.round((new Date(ed+'T00:00:00')-new Date(sd+'T00:00:00'))/86400000)+1) : 0;
-
-  const hrRate = parseFloat(rc['Addtional charge(THB/Hour)']||0);
-  const mRate  = parseFloat(rc['Addtional charge(THB/Month)']||0);
-  const aRate  = parseFloat(rc['Charge per Area(THB/M2)']||0);
-  const area   = parseFloat(r['Cal_Rent Area(SQ.M)']||r['Area']||0);
-  const minCharge = parseFloat(rc['Minimum charge(THB)']||0);
-
-  if(!holidayCode || !sd || !ed || totalDaysInRange<=0){
-    // ไม่มีการแยก Rate (UBCII หรือข้อมูลไม่ครบ) — ใช้ logic เดิม (rate เดียวตลอดเดือน)
-    const base = calcBaseCharge(r, rc, mHrs);
-    return { areaCharge: base.areaCharge, minCharge: base.minCharge, breakdown:null };
+// คำนวณค่าใช้จ่าย Monthly — ใช้ Rate Code เดียวที่ Admin เลือกไว้ตรงๆ
+// ขั้นต่ำ/ค่าบริการ (ถ้ามี) คิดคูณด้วยจำนวนวันที่ขอใช้งานจริง (ไม่ใช่คิดครั้งเดียว)
+function calcMonthlyCharge(r, rc, mHrs){
+  const { areaCharge, minCharge } = calcBaseCharge(r, rc, mHrs);
+  let dayCount = parseMonthlyDayCount(r['Remark']);
+  if(!dayCount){
+    const {sd, ed} = parseMonthlyDateRange(r);
+    if(sd && ed){
+      const d1 = new Date(sd+'T00:00:00'), d2 = new Date(ed+'T00:00:00');
+      if(!isNaN(d1) && !isNaN(d2) && d2>=d1) dayCount = Math.round((d2-d1)/86400000)+1;
+    }
   }
-
-  const rcList = (allRateCodes.length?allRateCodes:EXCEL_DATA.rates);
-  const hrc = rcList.find(x=>x['Code OT Air']===holidayCode);
-  const {weekday:wdDays, weekend:weDays} = countMonthlyDayTypes(sd, ed, bld);
-  const hrsPerDay = mHrs / totalDaysInRange;
-  const wdHours = wdDays * hrsPerDay, weHours = weDays * hrsPerDay;
-
-  // ส่วน จ-ศ — ใช้ Rate Code ที่ Admin เลือกไว้ (rc)
-  const wdCharge = aRate>0 ? aRate*area*wdHours : (hrRate>0 ? hrRate*wdHours : 0);
-
-  // ส่วน ส-อ/นักขัตฤกษ์ — ใช้ Rate Code เฉพาะของอาคาร (H02 / H01N)
-  let weCharge = 0, weMinCharge = 0;
-  if(hrc){
-    const hAreaRate = parseFloat(hrc['Charge per Area(THB/M2)']||0);
-    const hHourRate = parseFloat(hrc['Addtional charge(THB/Hour)']||0);
-    weMinCharge = parseFloat(hrc['Minimum charge(THB)']||0);
-    weCharge = hAreaRate>0 ? hAreaRate*area*weHours : (hHourRate>0 ? hHourRate*weHours : 0);
-  }
-
-  const areaCharge = wdCharge + weCharge;
-  // ค่าบริการ/ขั้นต่ำ ของแต่ละ Rate Code เป็นค่าบริการที่ "บวกเพิ่ม" ไม่ใช่เพดานขั้นต่ำที่เลือกค่ามากกว่า
-  // จึงบวกรวมเฉพาะส่วนที่มีวันใช้งานจริง (จ-ศ และ ส-อ/นักขัตฤกษ์ อาจมีค่าบริการคนละก้อน)
-  const combinedMin = (wdDays>0 ? minCharge : 0) + (weDays>0 ? weMinCharge : 0);
-  return {
-    areaCharge,
-    minCharge: combinedMin,
-    breakdown: { wdDays, weDays, wdHours, weHours, wdCharge, weCharge, holidayCode },
-  };
+  const minChargeTotal = (minCharge>0 && dayCount>0) ? minCharge*dayCount : minCharge;
+  return { areaCharge, minCharge: minChargeTotal, dayCount, minChargePerDay: minCharge };
 }
 function monthlyBadgeFor(r){
   const isM = !!(r['Monthly_End_Date'] || r['isMonthly'] || (r['Remark']||'').startsWith('[MONTHLY'));
@@ -4349,7 +4302,7 @@ function generateYADI() {
       TRANNUM: n,
       PROPERTY: propCode,                     // #2 ใช้ property code แทน building name
       PERSON: tcode,
-      OFFSET: 'OTLOVE',
+      OFFSET: 'UTLOVE',
       AMONTH: amount.toFixed(2),
       DATE: fmtDate(parseDate(r['Close_OT-Air(Date)'] || r['Open_OT-Air(Date)'] || startD)), // DATE = วันที่ปิดแอร์จริง
       POSTMONTH: dates.postMonth,
