@@ -4717,6 +4717,22 @@ function _monPopulateMonths(){
   sel.dataset.filled='1';
 }
 
+// คำนวณ "ชั่วโมงจริง" ของงานหนึ่งแถวใน Engineering — รายวันคือชั่วโมงที่วัดได้ตรงๆ
+// ส่วน Monthly คือ ชั่วโมงจริงต่อครั้ง × จำนวนวันที่ขอ (ประมาณการทั้งเดือน ใช้เทียบกับ "ชั่วโมงที่ขอ" ได้)
+function calcEngActualTotalHours(engRow){
+  const dailyHrs=(engRow['Cal_Actual_Hours']&&parseFloat(engRow['Cal_Actual_Hours'])>0)?parseFloat(engRow['Cal_Actual_Hours']):((engRow['Open_OT-Air(Time)']&&engRow['Close_OT-Air(Time)'])?((timeToMin(engRow['Close_OT-Air(Time)'])-timeToMin(engRow['Open_OT-Air(Time)'])+1440)%1440/60):0);
+  if(!dailyHrs) return 0;
+  const tRow=(gData.tenantReqs||[]).find(t=>t['OT-AIR Work Request No.']===engRow['OT-AIR Work Request No.']);
+  const isMEng=!!(tRow&&((tRow['Remark']||'').startsWith('[MONTHLY')||tRow['Monthly_Total_Hours']));
+  if(!isMEng) return dailyHrs;
+  let dayCount=parseMonthlyDayCount(tRow['Remark']);
+  if(!dayCount){
+    const {sd,ed}=parseMonthlyDateRange(tRow);
+    if(sd&&ed){const d1=new Date(sd+'T00:00:00'),d2=new Date(ed+'T00:00:00');if(!isNaN(d1)&&!isNaN(d2)&&d2>=d1)dayCount=Math.round((d2-d1)/86400000)+1;}
+  }
+  return dayCount>0 ? dailyHrs*dayCount : dailyHrs;
+}
+
 async function renderMonitoring(){
   const wrap = document.getElementById('monitor-wrap');
   if(!wrap) return;
@@ -4765,14 +4781,16 @@ async function renderMonitoring(){
     const bldList = bldFilter ? [bldFilter] : ['BTE','BTB','UBCII'];
     const grouped = bldList.map(b=>{
       const rows = csRows.filter(r=>r['Building']===b);
-      let reqHrs=0, actHrs=0;
+      let reqHrs=0;
       rows.forEach(r=>{
         const isM = !!(r['Monthly_Total_Hours']||(r['Remark']||'').startsWith('[MONTHLY'));
         let mHrs = parseFloat(r['Monthly_Total_Hours']||0); if(!mHrs&&isM) mHrs=parseMonthlyHours(r['Remark']||'');
         const rawHrs = parseFloat(r['Convers time(hour)']||0);
         reqHrs += (isM&&mHrs>0)?mHrs:rawHrs;
-        actHrs += parseFloat(r['Cal_Actual_Hours']||0)||0;
       });
+      // ชั่วโมงจริง ดึงจาก Engineering (Cal_Actual_Hours มีแค่ในนี้ ไม่มีใน CS Report) และคูณตามจำนวนวันสำหรับ Monthly
+      let actHrs=0;
+      eWork.filter(r=>r['Building']===b && matchDate(r)).forEach(r=>{ actHrs += calcEngActualTotalHours(r); });
       return {label:b, values:[{value:reqHrs,color:'var(--accent)',name:'ขอ'},{value:actHrs,color:'var(--green)',name:'จริง'}]};
     });
     html += `<div class="card">
