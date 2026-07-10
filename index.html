@@ -877,9 +877,9 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                 <option value="BTB">BTB</option>
                 <option value="UBCII">UBCII</option>
               </select>
-              <select class="fselect" id="mon-month" style="width:auto;min-width:130px" onchange="renderMonitoring()">
-                <option value="">ทุกเดือน</option>
-              </select>
+              <select class="fselect" id="mo-year" style="width:auto;min-width:80px" onchange="renderMonitoring()"><option value="">ทุกปี</option></select>
+              <select class="fselect" id="mo-month" style="width:auto;min-width:90px" onchange="renderMonitoring()"><option value="">ทุกเดือน</option></select>
+              <select class="fselect" id="mo-day" style="width:auto;min-width:80px" onchange="renderMonitoring()"><option value="">ทุกวัน</option></select>
               <button class="btn btn-p btn-sm" onclick="renderMonitoring()">🔄 รีเฟรช</button>
             </div>
           </div>
@@ -910,6 +910,12 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                 <button class="fbtn" onclick="setF(this,'approved-t')">Acknowledged</button>
               </div>
             </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0">
+              <input class="finput" id="tn-search" placeholder="🔍 ค้นหาเลขที่ / บริษัท / Space..." style="flex:1;min-width:180px" oninput="renderTenantTable()">
+              <select class="finput" id="tn-year" style="width:auto;min-width:80px" onchange="renderTenantTable()"><option value="">ทุกปี</option></select>
+              <select class="finput" id="tn-month" style="width:auto;min-width:90px" onchange="renderTenantTable()"><option value="">ทุกเดือน</option></select>
+              <select class="finput" id="tn-day" style="width:auto;min-width:80px" onchange="renderTenantTable()"><option value="">ทุกวัน</option></select>
+            </div>
             <div id="tenant-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
         </div>
@@ -939,6 +945,12 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                 <button class="fbtn" onclick="setFB(this,'ok-b')">มอบหมายช่างแล้ว</button>
                 <button class="fbtn" onclick="setFB(this,'reject-b')" style="color:var(--rose)">❌ แจ้งซ้ำ/ยกเลิก</button>
               </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0">
+              <input class="finput" id="cl-search" placeholder="🔍 ค้นหาเลขที่ / บริษัท / Space..." style="flex:1;min-width:180px" oninput="renderBuildingTable()">
+              <select class="finput" id="cl-year" style="width:auto;min-width:80px" onchange="renderBuildingTable()"><option value="">ทุกปี</option></select>
+              <select class="finput" id="cl-month" style="width:auto;min-width:90px" onchange="renderBuildingTable()"><option value="">ทุกเดือน</option></select>
+              <select class="finput" id="cl-day" style="width:auto;min-width:80px" onchange="renderBuildingTable()"><option value="">ทุกวัน</option></select>
             </div>
             <div id="building-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
@@ -979,6 +991,12 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                 <button class="fbtn" onclick="setFE(this,'done-e')">ปิดแล้ว</button>
               </div>
             </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0">
+              <input class="finput" id="en-search" placeholder="🔍 ค้นหาเลขที่ / บริษัท / Space..." style="flex:1;min-width:180px" oninput="renderEngTable()">
+              <select class="finput" id="en-year" style="width:auto;min-width:80px" onchange="renderEngTable()"><option value="">ทุกปี</option></select>
+              <select class="finput" id="en-month" style="width:auto;min-width:90px" onchange="renderEngTable()"><option value="">ทุกเดือน</option></select>
+              <select class="finput" id="en-day" style="width:auto;min-width:80px" onchange="renderEngTable()"><option value="">ทุกวัน</option></select>
+            </div>
             <div id="eng-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
         </div>
@@ -1009,6 +1027,12 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                 <button class="fbtn" onclick="setFCS(this,'BTB')">BTB</button>
                 <button class="fbtn" onclick="setFCS(this,'UBCII')">UBCII</button>
               </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0">
+              <input class="finput" id="cr-search" placeholder="🔍 ค้นหาเลขที่ / บริษัท / Space..." style="flex:1;min-width:180px" oninput="renderCSTable()">
+              <select class="finput" id="cr-year" style="width:auto;min-width:80px" onchange="renderCSTable()"><option value="">ทุกปี</option></select>
+              <select class="finput" id="cr-month" style="width:auto;min-width:90px" onchange="renderCSTable()"><option value="">ทุกเดือน</option></select>
+              <select class="finput" id="cr-day" style="width:auto;min-width:80px" onchange="renderCSTable()"><option value="">ทุกวัน</option></select>
             </div>
             <div id="cs-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
@@ -2185,9 +2209,11 @@ function dedup(arr){
 }
 
 function renderTenantTable(){
-  const data = filterByBuilding(gData.tenantReqs);
+  let data = filterByBuilding(gData.tenantReqs);
   const wrap = document.getElementById('tenant-table-wrap'); if(!wrap) return;
-  if(!data.length){wrap.innerHTML=emptyState('ยังไม่มีคำขอ OT Air');return;}
+  populateSearchDateDropdowns('tn', data, r=>r['Date']||r['Start Date']);
+  data = applySearchDateFilter(data, 'tn', r=>r['Date']||r['Start Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
+  if(!data.length){wrap.innerHTML=emptyState('ไม่พบข้อมูลที่ตรงกับเงื่อนไข');return;}
   const mBadge = '<span style="display:inline-block;margin-left:4px;padding:1px 5px;font-size:9px;font-weight:700;letter-spacing:.5px;border-radius:3px;background:rgba(0,180,255,.15);color:#00b4ff;border:1px solid rgba(0,180,255,.3);vertical-align:middle">📅 MONTHLY</span>';
   wrap.innerHTML='<div class="table-wrap"><table>'
     +'<thead><tr><th>เลขที่</th><th>วันที่</th><th>อาคาร</th><th>ประเภท</th><th>บริษัท</th><th>Space</th><th>วันที่ขอเปิด-ปิด</th><th>เวลา</th><th>สถานะ</th><th></th></tr></thead>'
@@ -2212,13 +2238,15 @@ function renderTenantTable(){
         +'<td>'+openCloseCell+'</td>'
         +'<td style="font-size:12px;white-space:nowrap">'+(r['Start time']||'—')+' – '+(r['Finish time']||'—')+'</td>'
         +'<td>'+statusTag(getStatus(r))+'</td>'
-        +'<td><button class="btn btn-o btn-sm" onclick="showDetail('+i+',\'tenant\')">ดู</button></td>'
+        +'<td><button class="btn btn-o btn-sm" onclick="showDetail(\''+encodeURIComponent(r['OT-AIR Work Request No.']||'')+'\',\'tenant\')">ดู</button></td>'
         +'</tr>';
     }).join('')+'</tbody></table></div>';
 }
 
 function renderBuildingTable(){
-  const data = filterByBuilding(gData.buildingAssigns);
+  let data = filterByBuilding(gData.buildingAssigns);
+  populateSearchDateDropdowns('cl', data, r=>r['Start Date']||r['Date']);
+  data = applySearchDateFilter(data, 'cl', r=>r['Start Date']||r['Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
   renderBuildingRows(data, document.getElementById('building-table-wrap'));
 }
 
@@ -2238,13 +2266,13 @@ function renderBuildingRows(data, wrap){
         // ยกเลิกแล้ว — แสดงแค่ Restore และ ดู ไม่มีปุ่มอื่น
         actions=`<div style="display:flex;gap:3px;flex-wrap:wrap">
           <button class="btn btn-g btn-sm" onclick="doAckByNo('${_no}')" title="ยกเลิก Reject">↩ Restore</button>
-          <button class="btn btn-o btn-sm" onclick="showDetail(${i},'building')">ดู</button>
+          <button class="btn btn-o btn-sm" onclick="showDetail('${_no}','building')">ดู</button>
         </div>`;
       } else {
         const ackBtn = !isAcked ? `<button class="btn btn-g btn-sm" onclick="doAckByNo('${_no}')">✓ Ack</button>` : '';
         const rejBtn = `<button class="btn btn-r btn-sm" onclick="doRejectByNo('${_no}')" title="ยกเลิก">✕ Reject</button>`;
         const assignBtn = `<button class="btn btn-p btn-sm" onclick="doAssignByNo('${_no}')">${r['Staff Name']?'✏️ แก้ไข':'👷 มอบหมาย'}</button>`;
-        actions=`<div style="display:flex;gap:3px;flex-wrap:wrap">${ackBtn}${rejBtn}${assignBtn}<button class="btn btn-o btn-sm" onclick="showDetail(${i},'building')">ดู</button></div>`;
+        actions=`<div style="display:flex;gap:3px;flex-wrap:wrap">${ackBtn}${rejBtn}${assignBtn}<button class="btn btn-o btn-sm" onclick="showDetail('${_no}','building')">ดู</button></div>`;
       }
       // style แถว Rejected
       const rowStyle = isRejected ? 'opacity:.55;background:rgba(248,81,73,.04)' : '';
@@ -2291,7 +2319,9 @@ function setFB(btn,f){
 
 
 function renderEngTable(){
-  const data = filterByBuilding(gData.engWork);
+  let data = filterByBuilding(gData.engWork);
+  populateSearchDateDropdowns('en', data, r=>r['Start Date']||r['Date']);
+  data = applySearchDateFilter(data, 'en', r=>r['Start Date']||r['Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
   renderEngRows(data, document.getElementById('eng-table-wrap'));
 }
 
@@ -2313,13 +2343,14 @@ function renderEngRows(data, wrap){
       const isOpen=r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)'];
       const isDone=r['Close_OT-Air(Time)'];
       let stTag,action;
+      const _enoAll=encodeURIComponent(r['OT-AIR Work Request No.']||'');
       if(isRejected){
         stTag=`<span class="tag t-red">❌ ยกเลิก/แจ้งซ้ำ</span>`;
-        action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button>`;
+        action=`<button class="btn btn-o btn-sm" onclick="showDetail('${_enoAll}','eng')">ดู</button>`;
       } else if(isDone){
         stTag=`<span class="tag t-green">✓ ปิดแล้ว</span>`;
-        const _enoD=encodeURIComponent(r['OT-AIR Work Request No.']||'');
-        action=`<button class="btn btn-o btn-sm" onclick="showDetail(${i},'eng')">ดู</button><button class="btn btn-o btn-sm" style="margin-left:3px" onclick="engEditByNo('${_enoD}')">✏ แก้ไข</button>`;
+        const _enoD=_enoAll;
+        action=`<button class="btn btn-o btn-sm" onclick="showDetail('${_enoAll}','eng')">ดู</button><button class="btn btn-o btn-sm" style="margin-left:3px" onclick="engEditByNo('${_enoD}')">✏ แก้ไข</button>`;
       } else if(isOpen && !isRejected){
         stTag=`<span class="tag t-amber">⚙ กำลังเปิด</span>`;
         const _eno2=encodeURIComponent(r['OT-AIR Work Request No.']||'');
@@ -2391,7 +2422,9 @@ function setFE(btn,f){
 }
 
 function renderCSTable(){
-  const data = filterByBuilding(gData.csReport);
+  let data = filterByBuilding(gData.csReport);
+  populateSearchDateDropdowns('cr', data, r=>r['Date']);
+  data = applySearchDateFilter(data, 'cr', r=>r['Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
   renderCSRows(data, document.getElementById('cs-table-wrap'));
 }
 
@@ -2430,7 +2463,7 @@ function renderCSRows(data, wrap){
     const rowBg = isM ? 'background:rgba(0,180,255,.04)' : '';
     const rcLevel = rc ? (rc['Tenant_Level Charge']||'Normal') : '';
     const levelTag = rcLevel ? `<span class="tag" style="background:${rcLevel==='Special'?'rgba(244,114,182,.15);color:#f472b6':'rgba(52,211,153,.15);color:#34d399'}">${rcLevel}</span>` : '—';
-    return `<tr style="cursor:pointer;${rowBg}" onclick="showCSDetail(${i})">
+    return `<tr style="cursor:pointer;${rowBg}" onclick="showCSDetail('${encodeURIComponent(r['OT-AIR Work Request No.']||'')}')">
       <td><strong style="color:var(--accent)">${r['OT-AIR Work Request No.']||'—'}</strong>${monthlyBadgeFor(r)}</td>
       <td style="font-size:11px">${r['Name']||'—'}</td>
       <td>${bldTag(r['Building'])}</td>
@@ -3296,11 +3329,15 @@ async function submitRequest(){
 // ============================================================
 // DETAIL MODAL
 // ============================================================
-function showDetail(i,type){
+function showDetail(reqNoOrIdx,type){
+  // รองรับทั้งเลขที่คำขอ (encodeURIComponent) และ index เดิม (เผื่อจุดเรียกเก่าที่ยังไม่ได้แก้)
+  // เพราะตอนนี้มี Search/Filter เพิ่มเติมแล้ว ทำให้ index ในตารางที่กรองแล้วไม่ตรงกับ index ในชุดข้อมูลเดิมอีกต่อไป
+  const reqNo = decodeURIComponent(String(reqNoOrIdx));
+  const byReqNo = (arr)=>arr.find(x=>x['OT-AIR Work Request No.']===reqNo);
   let r;
-  if(type==='tenant')r=filterByBuilding(gData.tenantReqs)[i];
-  else if(type==='building')r=filterByBuilding(gData.buildingAssigns)[i];
-  else r=filterByBuilding(gData.engWork)[i];
+  if(type==='tenant')   r = /^\d+$/.test(reqNo) ? filterByBuilding(gData.tenantReqs)[reqNoOrIdx]      : byReqNo(filterByBuilding(gData.tenantReqs));
+  else if(type==='building') r = /^\d+$/.test(reqNo) ? filterByBuilding(gData.buildingAssigns)[reqNoOrIdx] : byReqNo(filterByBuilding(gData.buildingAssigns));
+  else r = /^\d+$/.test(reqNo) ? filterByBuilding(gData.engWork)[reqNoOrIdx] : byReqNo(filterByBuilding(gData.engWork));
   if(!r){toast('⚠️ ไม่พบข้อมูล');return;}
   const title={'tenant':'📋 รายละเอียดคำขอ','building':'🏗️ รายละเอียดการมอบหมาย','eng':'🔧 รายละเอียดงาน Engineering'};
   document.getElementById('detail-title').firstChild.textContent=(title[type]||'📋 รายละเอียด')+' ';
@@ -3344,8 +3381,11 @@ function showDetail(i,type){
   openMod('mod-detail');
 }
 
-function showCSDetail(i){
-  const r=filterByBuilding(gData.csReport)[i]; if(!r)return;
+function showCSDetail(reqNoOrIdx){
+  const reqNo = decodeURIComponent(String(reqNoOrIdx));
+  const arr = filterByBuilding(gData.csReport);
+  const r = /^\d+$/.test(reqNo) ? arr[reqNoOrIdx] : arr.find(x=>x['OT-AIR Work Request No.']===reqNo);
+  if(!r)return;
   // Monthly override — ใช้ logic เดียวกับ renderCSRows
   const isM = !!(r['Monthly_Total_Hours'] || (r['Remark']||'').startsWith('[MONTHLY'));
   const rawHrs = parseFloat(r['Convers time(hour)']||0);
@@ -4057,6 +4097,65 @@ function v(id){const el=document.getElementById(id);return el?(el.value||'').tri
 function se(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 function num(s){return s?Number(String(s).replace(/,/g,'')).toLocaleString():'0';}
 function fmtDate(s){if(!s)return'—';return String(s).split(' ')[0]||s;}
+
+// ============================================================
+// SEARCH + YEAR/MONTH/DAY FILTER — ใช้ร่วมกันทุกหน้า (Tenant/CLS/Engineering/CLS Report)
+// ============================================================
+// แปลงวันที่จากฟิลด์ที่มีหลายรูปแบบในระบบ ("2569-06-13..." พ.ศ. หรือ "13/06/2026" ค.ศ.) ให้เป็น "yyyy-MM-dd" (ค.ศ.) เสมอ
+function normalizeDateToISO(raw){
+  if(!raw) return '';
+  const s = String(raw).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){ let y=parseInt(m[1]); if(y>2400) y-=543; return y+'-'+m[2]+'-'+m[3]; }
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if(m){ let y=parseInt(m[3]); if(y>2400) y-=543; return y+'-'+m[2]+'-'+m[1]; }
+  return '';
+}
+
+// เติม option ปี (ดึงจากข้อมูลจริง) + เดือน + วัน (คงที่ 01-12 / 01-31) ให้ dropdown ของแต่ละหน้า ครั้งเดียวพอ
+function populateSearchDateDropdowns(prefix, data, dateFieldGetter){
+  const yearEl = document.getElementById(prefix+'-year');
+  if(!yearEl || yearEl.dataset.filled) return;
+  const years = new Set();
+  (data||[]).forEach(r=>{ const iso=normalizeDateToISO(dateFieldGetter(r)); if(iso) years.add(iso.split('-')[0]); });
+  Array.from(years).sort().reverse().forEach(y=>{
+    const opt=document.createElement('option'); opt.value=y; opt.textContent=y; yearEl.appendChild(opt);
+  });
+  const monthEl = document.getElementById(prefix+'-month');
+  if(monthEl) for(let m=1;m<=12;m++){ const mm=String(m).padStart(2,'0'); const opt=document.createElement('option'); opt.value=mm; opt.textContent=mm; monthEl.appendChild(opt); }
+  const dayEl = document.getElementById(prefix+'-day');
+  if(dayEl) for(let d=1;d<=31;d++){ const dd=String(d).padStart(2,'0'); const opt=document.createElement('option'); opt.value=dd; opt.textContent=dd; dayEl.appendChild(opt); }
+  yearEl.dataset.filled='1';
+}
+
+// กรองข้อมูลตามคำค้นหา + ปี/เดือน/วัน ที่เลือกไว้ในหน้านั้นๆ
+function applySearchDateFilter(data, prefix, dateFieldGetter, searchFieldGetter){
+  const q = (document.getElementById(prefix+'-search')?.value||'').trim().toLowerCase();
+  const year = document.getElementById(prefix+'-year')?.value||'';
+  const month = document.getElementById(prefix+'-month')?.value||'';
+  const day = document.getElementById(prefix+'-day')?.value||'';
+  if(!q && !year && !month && !day) return data;
+  return data.filter(r=>{
+    if(q && !searchFieldGetter(r).toLowerCase().includes(q)) return false;
+    if(year||month||day){
+      const iso = normalizeDateToISO(dateFieldGetter(r));
+      if(!iso) return false;
+      const [y,m,d] = iso.split('-');
+      if(year && y!==year) return false;
+      if(month && m!==month) return false;
+      if(day && d!==day) return false;
+    }
+    return true;
+  });
+}
+function searchDateFilterBarHTML(prefix, placeholder, renderFnName){
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0">
+    <input class="finput" id="${prefix}-search" placeholder="🔍 ${placeholder}" style="flex:1;min-width:180px" oninput="${renderFnName}()">
+    <select class="finput" id="${prefix}-year" style="width:auto;min-width:80px" onchange="${renderFnName}()"><option value="">ทุกปี</option></select>
+    <select class="finput" id="${prefix}-month" style="width:auto;min-width:90px" onchange="${renderFnName}()"><option value="">ทุกเดือน</option></select>
+    <select class="finput" id="${prefix}-day" style="width:auto;min-width:80px" onchange="${renderFnName}()"><option value="">ทุกวัน</option></select>
+  </div>`;
+}
 function nowStr(){
   const d=new Date();
   const pad=n=>String(n).padStart(2,'0');
@@ -4235,7 +4334,7 @@ function setF(btn,f){
       <td><strong>${r['Space']||'—'}</strong></td>
       <td style="font-size:12px;white-space:nowrap">${r['Start time']||'—'} – ${r['Finish time']||'—'}</td>
       <td>${statusTag(getStatus(r))}</td>
-      <td><button class="btn btn-o btn-sm" onclick="showDetail(${i},'tenant')">ดู</button></td>
+      <td><button class="btn btn-o btn-sm" onclick="showDetail('${encodeURIComponent(r['OT-AIR Work Request No.']||'')}','tenant')">ดู</button></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
@@ -4685,6 +4784,12 @@ function svgPieChart(items, opt){
   let angle = -90, paths='';
   items.forEach(d=>{
     const slice = (d.value/total)*360;
+    if(d.value>0 && slice>=359.99){
+      // สัดส่วน 100% (มีแค่หมวดเดียวที่มีค่า) — วาดเป็นวงกลมเต็มวง เพราะ arc path ปกติจะจุดเริ่ม/จบทับกันจนมองไม่เห็น
+      paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${d.color}" opacity="0.9"><title>${d.label}: ${d.value}</title></circle>`;
+      angle += slice;
+      return;
+    }
     const a1 = angle*Math.PI/180, a2 = (angle+slice)*Math.PI/180;
     const x1 = cx+r*Math.cos(a1), y1 = cy+r*Math.sin(a1);
     const x2 = cx+r*Math.cos(a2), y2 = cy+r*Math.sin(a2);
@@ -4697,24 +4802,6 @@ function svgPieChart(items, opt){
     <svg viewBox="0 0 ${size} ${size}" style="width:${size}px;height:${size}px;flex-shrink:0">${paths}</svg>
     <div style="display:flex;flex-direction:column;gap:6px">${legend}</div>
   </div>`;
-}
-
-function _monPopulateMonths(){
-  const sel = document.getElementById('mon-month');
-  if(!sel || sel.dataset.filled) return;
-  const months = new Set();
-  (gData.csReport||[]).forEach(r=>{
-    const d = String(r['Date']||'');
-    const m = d.match(/(\d{4})-(\d{2})-(\d{2})/) || d.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    if(m){
-      let ym = m[1].length===4 ? m[1]+'-'+m[2] : m[3]+'-'+m[2];
-      months.add(ym);
-    }
-  });
-  Array.from(months).sort().reverse().forEach(ym=>{
-    const opt = document.createElement('option'); opt.value=ym; opt.textContent=ym; sel.appendChild(opt);
-  });
-  sel.dataset.filled='1';
 }
 
 // คำนวณ "ชั่วโมงจริง" ของงานหนึ่งแถวใน Engineering — รายวันคือชั่วโมงที่วัดได้ตรงๆ
@@ -4736,7 +4823,7 @@ function calcEngActualTotalHours(engRow){
 async function renderMonitoring(){
   const wrap = document.getElementById('monitor-wrap');
   if(!wrap) return;
-  _monPopulateMonths();
+  populateSearchDateDropdowns('mo', gData.csReport||[], r=>r['Date']);
   const cfg = await getMonWidgetConfig();
 
   // Building scoping: Admin เห็นทุกอาคาร (เลือกได้อิสระ) / CLS เห็นเฉพาะอาคารตัวเอง (ล็อก dropdown)
@@ -4747,36 +4834,31 @@ async function renderMonitoring(){
     else { bldSel.disabled = false; }
   }
   const bldFilter = isScoped ? currentBuilding : (document.getElementById('mon-bld')?.value || '');
-  const monthFilter = document.getElementById('mon-month')?.value || '';
-
-  const matchDate = (r) => {
-    if(!monthFilter) return true;
-    const d = String(r['Date']||'');
-    return d.includes(monthFilter) || d.startsWith(monthFilter);
-  };
+  const matchDate = (r) => applySearchDateFilter([r], 'mo', x=>x['Date'], ()=> '').length>0;
   const tReqs = (gData.tenantReqs||[]).filter(r=>(!bldFilter||r['Building']===bldFilter) && matchDate(r));
   const bAssigns = (gData.buildingAssigns||[]).filter(r=>(!bldFilter||r['Building']===bldFilter));
   const eWork = (gData.engWork||[]).filter(r=>(!bldFilter||r['Building']===bldFilter));
   const csRows = (gData.csReport||[]).filter(r=>(!bldFilter||r['Building']===bldFilter) && matchDate(r));
 
-  let html = '';
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:10px">';
+  let wideHtml = ''; // widget ที่ต้องการความกว้างเต็ม (กราฟ/ตาราง) ไปต่อท้ายแยกจากกริดเล็ก
 
   // Widget 1: ยอดคำขอทั้งหมด / Pending / Acknowledge
   if(cfg.w1){
     const total = tReqs.length;
     const pending = tReqs.filter(r=>getStatus(r)==='pending').length;
     const ack = tReqs.filter(r=>getStatus(r)==='acknowledged').length;
-    html += `<div class="card">
-      <div class="card-header"><div class="card-title"><div class="card-title-icon">📋</div>1. ยอดคำขอ OT Air</div></div>
-      <div class="stats-grid" style="padding:14px">
-        <div class="stat-card"><div class="stat-num" style="color:var(--accent)">${total}</div><div class="stat-label">คำขอทั้งหมด</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${pending}</div><div class="stat-label">Pending</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${ack}</div><div class="stat-label">Acknowledge</div></div>
+    html += `<div class="card" style="grid-column:span 2">
+      <div class="card-header" style="padding:8px 10px"><div class="card-title" style="font-size:11px"><div class="card-title-icon" style="width:20px;height:20px;font-size:11px">📋</div>1. ยอดคำขอ OT Air</div></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 10px">
+        <div class="stat-card" style="padding:8px"><div class="stat-num" style="font-size:20px;color:var(--accent)">${total}</div><div class="stat-label" style="font-size:9px">คำขอทั้งหมด</div></div>
+        <div class="stat-card" style="padding:8px"><div class="stat-num" style="font-size:20px;color:var(--amber)">${pending}</div><div class="stat-label" style="font-size:9px">Pending</div></div>
+        <div class="stat-card" style="padding:8px"><div class="stat-num" style="font-size:20px;color:var(--green)">${ack}</div><div class="stat-label" style="font-size:9px">Acknowledge</div></div>
       </div>
     </div>`;
   }
 
-  // Widget 2: ชั่วโมงที่ขอ vs ชั่วโมงจริง (แยกตามอาคาร)
+  // Widget 2: ชั่วโมงที่ขอ vs ชั่วโมงจริง (แยกตามอาคาร) — วางต่อจากข้อ 1 แทนที่ตำแหน่งเดิมของ 3-4-5
   if(cfg.w2){
     const bldList = bldFilter ? [bldFilter] : ['BTE','BTB','UBCII'];
     const grouped = bldList.map(b=>{
@@ -4793,13 +4875,13 @@ async function renderMonitoring(){
       eWork.filter(r=>r['Building']===b && matchDate(r)).forEach(r=>{ actHrs += calcEngActualTotalHours(r); });
       return {label:b, values:[{value:reqHrs,color:'var(--accent)',name:'ขอ'},{value:actHrs,color:'var(--green)',name:'จริง'}]};
     });
-    html += `<div class="card">
-      <div class="card-header"><div class="card-title"><div class="card-title-icon">⏱️</div>2. ชั่วโมงที่ขอ เทียบกับชั่วโมงที่ใช้จริง</div></div>
-      <div style="padding:14px">
-        <div style="display:flex;gap:14px;margin-bottom:8px;font-size:11px">
+    html += `<div class="card" style="grid-column:span 3">
+      <div class="card-header" style="padding:8px 10px"><div class="card-title" style="font-size:11px"><div class="card-title-icon" style="width:20px;height:20px;font-size:11px">⏱️</div>2. ชั่วโมงที่ขอ เทียบกับชั่วโมงที่ใช้จริง</div></div>
+      <div style="padding:6px 10px 10px">
+        <div style="display:flex;gap:14px;margin-bottom:4px;font-size:10px">
           <span style="color:var(--accent)">■ ชั่วโมงที่ขอ</span><span style="color:var(--green)">■ ชั่วโมงจริง</span>
         </div>
-        ${svgGroupedBarChart(grouped,{height:200})}
+        ${svgGroupedBarChart(grouped,{height:100})}
       </div>
     </div>`;
   }
@@ -4812,10 +4894,10 @@ async function renderMonitoring(){
       ...eWork.filter(r=>r['Engineering Action(Acknowledge/Reject)']==='Reject').map(r=>r['OT-AIR Work Request No.']),
     ]);
     html += `<div class="card">
-      <div class="card-header"><div class="card-title"><div class="card-title-icon">👷</div>3. มอบหมายช่าง / แจ้งซ้ำ-ยกเลิก</div></div>
-      <div class="stats-grid" style="padding:14px">
-        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${assigned}</div><div class="stat-label">มอบหมายช่างแล้ว</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--rose)">${rejectSet.size}</div><div class="stat-label">แจ้งซ้ำ/ยกเลิก</div></div>
+      <div class="card-header" style="padding:8px 10px"><div class="card-title" style="font-size:11px"><div class="card-title-icon" style="width:20px;height:20px;font-size:11px">👷</div>3. มอบหมาย/ยกเลิก</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 10px">
+        <div class="stat-card" style="padding:8px"><div class="stat-num" style="font-size:20px;color:var(--green)">${assigned}</div><div class="stat-label" style="font-size:9px">มอบหมายแล้ว</div></div>
+        <div class="stat-card" style="padding:8px"><div class="stat-num" style="font-size:20px;color:var(--rose)">${rejectSet.size}</div><div class="stat-label" style="font-size:9px">แจ้งซ้ำ/ยกเลิก</div></div>
       </div>
     </div>`;
   }
@@ -4825,10 +4907,10 @@ async function renderMonitoring(){
     const opening = eWork.filter(r=>r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)']).length;
     const closed = eWork.filter(r=>r['Close_OT-Air(Time)']).length;
     html += `<div class="card">
-      <div class="card-header"><div class="card-title"><div class="card-title-icon">❄️</div>4. สถานะเปิด-ปิดแอร์</div></div>
-      <div class="stats-grid" style="padding:14px">
-        <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${opening}</div><div class="stat-label">กำลังเปิด</div></div>
-        <div class="stat-card"><div class="stat-num" style="color:var(--green)">${closed}</div><div class="stat-label">ปิดแล้ว</div></div>
+      <div class="card-header" style="padding:8px 10px"><div class="card-title" style="font-size:11px"><div class="card-title-icon" style="width:20px;height:20px;font-size:11px">❄️</div>4. เปิด-ปิดแอร์</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 10px">
+        <div class="stat-card" style="padding:8px"><div class="stat-num" style="font-size:20px;color:var(--amber)">${opening}</div><div class="stat-label" style="font-size:9px">กำลังเปิด</div></div>
+        <div class="stat-card" style="padding:8px"><div class="stat-num" style="font-size:20px;color:var(--green)">${closed}</div><div class="stat-label" style="font-size:9px">ปิดแล้ว</div></div>
       </div>
     </div>`;
   }
@@ -4841,9 +4923,9 @@ async function renderMonitoring(){
       else if(r['Open_OT-Air(Time)']&&r['Close_OT-Air(Time)']) totalActual += ((timeToMin(r['Close_OT-Air(Time)'])-timeToMin(r['Open_OT-Air(Time)'])+1440)%1440/60);
     });
     html += `<div class="card">
-      <div class="card-header"><div class="card-title"><div class="card-title-icon">🕐</div>5. ชั่วโมงเปิดจริงรวม</div></div>
-      <div class="stats-grid" style="padding:14px">
-        <div class="stat-card"><div class="stat-num" style="color:var(--accent)">${totalActual.toFixed(2)}</div><div class="stat-label">ชั่วโมงรวมทั้งหมด</div></div>
+      <div class="card-header" style="padding:8px 10px"><div class="card-title" style="font-size:11px"><div class="card-title-icon" style="width:20px;height:20px;font-size:11px">🕐</div>5. ชั่วโมงจริงรวม</div></div>
+      <div style="padding:8px 10px">
+        <div class="stat-card" style="padding:8px"><div class="stat-num" style="font-size:20px;color:var(--accent)">${totalActual.toFixed(2)}</div><div class="stat-label" style="font-size:9px">ชั่วโมงรวมทั้งหมด</div></div>
       </div>
     </div>`;
   }
@@ -4857,13 +4939,14 @@ async function renderMonitoring(){
       if(!rc) return;
       if((rc['Tenant_Level Charge']||'Normal')==='Special') specialCnt++; else normalCnt++;
     });
-    html += `<div class="card">
-      <div class="card-header"><div class="card-title"><div class="card-title-icon">⭐</div>6. Level (Normal / Special)</div></div>
-      <div style="padding:14px">
-        ${svgPieChart([{label:'Normal',value:normalCnt,color:'#34d399'},{label:'Special',value:specialCnt,color:'#f472b6'}],{size:150})}
+    html += `<div class="card" style="grid-column:span 2">
+      <div class="card-header" style="padding:8px 10px"><div class="card-title" style="font-size:11px"><div class="card-title-icon" style="width:20px;height:20px;font-size:11px">⭐</div>6. Level (Normal/Special)</div></div>
+      <div style="padding:8px 10px">
+        ${svgPieChart([{label:'Normal',value:normalCnt,color:'#34d399'},{label:'Special',value:specialCnt,color:'#f472b6'}],{size:80})}
       </div>
     </div>`;
   }
+  html += '</div>'; // ปิดกริดเล็ก
 
   // Widget 7: ค่า OT-Air รวม เรียงบริษัท/พื้นที่
   if(cfg.w7){
@@ -4888,24 +4971,24 @@ async function renderMonitoring(){
       byCompany[co] = (byCompany[co]||0)+total;
       bySpace[sp] = (bySpace[sp]||0)+total;
     });
-    const topCompany = Object.entries(byCompany).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const topSpace = Object.entries(bySpace).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const topCompany = Object.entries(byCompany).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const topSpace = Object.entries(bySpace).sort((a,b)=>b[1]-a[1]).slice(0,5);
     const grandTotal = Object.values(byCompany).reduce((s,v)=>s+v,0);
-    html += `<div class="card">
-      <div class="card-header"><div class="card-title"><div class="card-title-icon">💰</div>7. ค่า OT-Air รวม — เรียงบริษัท/พื้นที่มากไปน้อย</div></div>
-      <div style="padding:14px">
-        <div class="stat-card" style="margin-bottom:14px"><div class="stat-num" style="color:var(--purple)">฿${num(grandTotal)}</div><div class="stat-label">ยอดรวมทั้งหมด</div></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    wideHtml += `<div class="card" style="margin-bottom:10px">
+      <div class="card-header" style="padding:8px 10px"><div class="card-title" style="font-size:11px"><div class="card-title-icon" style="width:20px;height:20px;font-size:11px">💰</div>7. ค่า OT-Air รวม — เรียงบริษัท/พื้นที่ (Top 5)</div>
+      <strong style="color:var(--purple);font-size:13px">฿${num(grandTotal)}</strong></div>
+      <div style="padding:8px 10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">เรียงตามบริษัท (Top 10)</div>
-            <div class="table-wrap"><table><thead><tr><th>บริษัท</th><th style="text-align:right">฿</th></tr></thead><tbody>
-              ${topCompany.map(([n,v])=>`<tr><td style="font-size:11px">${n}</td><td style="text-align:right;color:var(--accent)">฿${num(v)}</td></tr>`).join('')||'<tr><td colspan="2">ไม่มีข้อมูล</td></tr>'}
+            <div style="font-size:9px;font-weight:700;color:var(--text2);margin-bottom:4px">เรียงตามบริษัท</div>
+            <div class="table-wrap"><table style="font-size:10px"><tbody>
+              ${topCompany.map(([n,v])=>`<tr><td style="padding:3px 6px">${n}</td><td style="text-align:right;color:var(--accent);padding:3px 6px">฿${num(v)}</td></tr>`).join('')||'<tr><td>ไม่มีข้อมูล</td></tr>'}
             </tbody></table></div>
           </div>
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">เรียงตามพื้นที่ (Top 10)</div>
-            <div class="table-wrap"><table><thead><tr><th>พื้นที่</th><th style="text-align:right">฿</th></tr></thead><tbody>
-              ${topSpace.map(([n,v])=>`<tr><td style="font-size:11px">${n}</td><td style="text-align:right;color:var(--accent)">฿${num(v)}</td></tr>`).join('')||'<tr><td colspan="2">ไม่มีข้อมูล</td></tr>'}
+            <div style="font-size:9px;font-weight:700;color:var(--text2);margin-bottom:4px">เรียงตามพื้นที่</div>
+            <div class="table-wrap"><table style="font-size:10px"><tbody>
+              ${topSpace.map(([n,v])=>`<tr><td style="padding:3px 6px">${n}</td><td style="text-align:right;color:var(--accent);padding:3px 6px">฿${num(v)}</td></tr>`).join('')||'<tr><td>ไม่มีข้อมูล</td></tr>'}
             </tbody></table></div>
           </div>
         </div>
@@ -4963,27 +5046,29 @@ async function renderMonitoring(){
       projRows += `<tr><td>${py}-${String(pm).padStart(2,'0')}</td><td style="text-align:right;color:var(--purple)">฿${num(base)}</td></tr>`;
     }
     const yearProjectionFull = base*12; // ประมาณการรายปีแบบง่าย (เฉลี่ยเดือนสุดท้าย × 12)
-    html += `<div class="card">
-      <div class="card-header"><div class="card-title"><div class="card-title-icon">📈</div>8. Prediction แนวโน้มรายได้ OT-AIR</div></div>
-      <div style="padding:14px">
-        ${sortedMonths.length<2 ? `<div style="color:var(--text3);font-size:12px">ข้อมูลย้อนหลังยังไม่พอสำหรับพยากรณ์ (ต้องมีอย่างน้อย 2 เดือน) — แสดงยอดที่มีอยู่แทน</div>` : ''}
-        ${sortedMonths.length ? svgBarChart(sortedMonths.slice(-6).map(m=>({label:m,value:Math.round(monthlyTotals[m])})),{height:180,fmt:v=>'฿'+num(v)}) : ''}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px">
+    wideHtml += `<div class="card">
+      <div class="card-header" style="padding:8px 10px"><div class="card-title" style="font-size:11px"><div class="card-title-icon" style="width:20px;height:20px;font-size:11px">📈</div>8. Prediction แนวโน้มรายได้ OT-AIR</div></div>
+      <div style="padding:8px 10px">
+        ${sortedMonths.length<2 ? `<div style="color:var(--text3);font-size:10px">ข้อมูลย้อนหลังยังไม่พอสำหรับพยากรณ์ (ต้องมีอย่างน้อย 2 เดือน) — แสดงยอดที่มีอยู่แทน</div>` : ''}
+        ${sortedMonths.length ? svgBarChart(sortedMonths.slice(-6).map(m=>({label:m,value:Math.round(monthlyTotals[m])})),{height:90,fmt:v=>'฿'+num(v)}) : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">พยากรณ์ 6 เดือนข้างหน้า (แนวโน้ม ${(growthRate*100).toFixed(1)}%/เดือน)</div>
-            <div class="table-wrap"><table><thead><tr><th>เดือน</th><th style="text-align:right">คาดการณ์ (฿)</th></tr></thead><tbody>${projRows}</tbody></table></div>
+            <div style="font-size:9px;font-weight:700;color:var(--text2);margin-bottom:4px">พยากรณ์ 6 เดือนข้างหน้า (แนวโน้ม ${(growthRate*100).toFixed(1)}%/เดือน)</div>
+            <div class="table-wrap"><table style="font-size:10px"><tbody>${projRows}</tbody></table></div>
           </div>
           <div>
-            <div class="stat-card" style="margin-bottom:10px"><div class="stat-num" style="color:var(--purple);font-size:20px">฿${num(yearTotal)}</div><div class="stat-label">รวมคาดการณ์ 6 เดือนข้างหน้า</div></div>
-            <div class="stat-card"><div class="stat-num" style="color:var(--purple);font-size:20px">฿${num(yearProjectionFull)}</div><div class="stat-label">ประมาณการรายได้ต่อปี (12 เดือน)</div></div>
-            <div style="font-size:10px;color:var(--text3);margin-top:8px">* คำนวณจากค่าเฉลี่ยย้อนหลัง + แนวโน้มการเติบโต ใช้เพื่อการวางแผนการตลาดเบื้องต้น ไม่ใช่ตัวเลขยืนยัน</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+              <div class="stat-card" style="padding:8px"><div class="stat-num" style="color:var(--purple);font-size:15px">฿${num(yearTotal)}</div><div class="stat-label" style="font-size:8px">รวม 6 เดือนข้างหน้า</div></div>
+              <div class="stat-card" style="padding:8px"><div class="stat-num" style="color:var(--purple);font-size:15px">฿${num(yearProjectionFull)}</div><div class="stat-label" style="font-size:8px">ประมาณการต่อปี</div></div>
+            </div>
+            <div style="font-size:9px;color:var(--text3)">* ประมาณการเพื่อวางแผนการตลาดเบื้องต้น ไม่ใช่ตัวเลขยืนยัน</div>
           </div>
         </div>
       </div>
     </div>`;
   }
 
-  wrap.innerHTML = html || emptyState('ไม่มี Widget ที่เปิดแสดงผล — ไปที่ Settings เพื่อเปิดใช้งาน');
+  wrap.innerHTML = (html+wideHtml) || emptyState('ไม่มี Widget ที่เปิดแสดงผล — ไปที่ Settings เพื่อเปิดใช้งาน');
 }
 
 // ---- Settings: เลือกว่าจะแสดง Widget ไหนใน Monitoring Dashboard (Admin เท่านั้น) ----
