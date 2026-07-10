@@ -1351,7 +1351,6 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
           <div id="yadi-export-bar" style="display:none;margin-bottom:12px;display:none">
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-p" onclick="exportYADI_CSV()">⬇ Export CSV (YARDI Format)</button>
-              <button class="btn btn-o btn-sm" onclick="exportYADI_Full()">⬇ Export Full Table</button>
               <button class="btn btn-o btn-sm" onclick="window.print()">🖨 Print</button>
             </div>
           </div>
@@ -1363,7 +1362,6 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                 ตาราง Sent to YARDI — <span id="yadi-period-label"></span>
               </div>
               <div style="display:flex;gap:6px">
-                <button class="btn btn-p btn-sm" onclick="exportYADI_CSV()">⬇ CSV</button>
                 <button class="btn btn-o btn-sm" onclick="window.print()">🖨</button>
               </div>
             </div>
@@ -3020,50 +3018,77 @@ function calcMonthlyHours(){
 
 async function submitMonthlyRequest(){
   // shared fields อยู่ใน mod-new-req
-  const bld=v('nr-bld'), unit=v('nr-unit'), type=v('nr-type');
+  if(_submitting){toast('⚠️ กำลังบันทึกอยู่...');return;}
+  const bld=v('nr-bld'), type=v('nr-type');
   const sd=v('mn-start-date'), ed=v('mn-end-date');
   const st=v('mn-start-time'), et=v('mn-end-time');
   const name=v('mn-name'), tel=v('mn-tel'), remark=v('mn-remark');
-  if(!bld||!unit||!sd||!ed||!st||!et||!name){toast('⚠️ กรุณากรอกข้อมูลให้ครบ');return;}
+
+  // รวบรวมทุก Unit ที่เลือกไว้ (รองรับหลาย Unit ในคำขอ Monthly เดียวกัน — เดิม bug เช็คแค่ nr-unit ตัวเดียว
+  // ทำให้กรอกครบทุก Unit แล้วก็ยังขึ้น "กรุณากรอกข้อมูลให้ครบ" เพราะไม่เคยอ่านค่าจาก Unit 2, 3 เลย)
+  const unitRows = getUnitRowsData();
+  if(!bld){toast('⚠️ กรุณาเลือก Building');return;}
+  if(!unitRows.length){toast('⚠️ กรุณาเลือกอย่างน้อย 1 Unit (Space)');return;}
+  if(!sd||!ed||!st||!et||!name){toast('⚠️ กรุณากรอกข้อมูลให้ครบ (วันที่/เวลา/ผู้แจ้ง)');return;}
   const d1=new Date(sd), d2=new Date(ed);
   if(d2<d1){toast('⚠️ วันสิ้นสุดต้องหลังวันเริ่ม');return;}
   const days = Math.round((d2-d1)/86400000)+1;
   const hrsDay = ((timeToMin(et)-timeToMin(st)+1440)%1440)/60;
   const hrsTotal = (days * hrsDay).toFixed(2);
-  const tenantInfo = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
   const remarkFull = `[MONTHLY ${sd} ถึง ${ed} | ${days} วัน × ${hrsDay.toFixed(1)} ชม. = ${hrsTotal} ชม.รวม]${remark?' '+remark:''}`;
+
+  _submitting=true;
   const sb = document.querySelector('#tab-panel-monthly .btn-p');
   if(sb){sb.disabled=true; sb.textContent='⏳ กำลังบันทึก...';}
-  if(USE_LIVE_API){
-    toast('⏳ กำลังบันทึก Monthly OT...');
-    const res = await apiGET({action:'submitRequest', data:encodeURIComponent(JSON.stringify({
-      building:bld, space:unit, type, date:sd,
-      startTime:st, endTime:et,
-      endDate:ed, totalDays:days, totalHours:hrsTotal,
-      requester:name, tel, remark:remarkFull,
-      tenantCode:tenantInfo['Code']||'',
-      tenantName:tenantInfo['Name']||'',
-      area:tenantInfo['Area']||'',
-      isMonthly:true,
-    }))});
-    if(sb){sb.disabled=false; sb.textContent='📤 ส่งคำขอ Monthly';}
-    if(res){
-      closeMod('mod-new-req');
-      toast('✅ บันทึก Monthly OT '+res.reqNo+' — '+days+' วัน / '+hrsTotal+' ชม.รวม');
-      setTimeout(async()=>{gData={tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[]};await loadAllLive();renderAllModules();},1500);
-      return;
+
+  const savedNos = [];
+  let hasError = false;
+
+  for(const row of unitRows){
+    const unit = row.unit;
+    const tenantInfo = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
+    if(USE_LIVE_API){
+      try{
+        const res = await apiGET({action:'submitRequest', data:encodeURIComponent(JSON.stringify({
+          building:bld, space:unit, type, date:sd,
+          startTime:st, endTime:et,
+          endDate:ed, totalDays:days, totalHours:hrsTotal,
+          requester:name, tel, remark:remarkFull,
+          tenantCode:tenantInfo['Code']||'',
+          tenantName:tenantInfo['Name']||row.tenant||'',
+          area:tenantInfo['Area']||'',
+          isMonthly:true,
+        }))});
+        if(res && res.reqNo) savedNos.push(res.reqNo);
+        else hasError=true;
+      }catch(e){ hasError=true; }
+    } else {
+      // Local fallback
+      const _now=new Date();
+      const _ym=_now.getFullYear()+String(_now.getMonth()+1).padStart(2,'0');
+      const _prefix='OT_AIR'+_ym;
+      const _cnt=gData.tenantReqs.filter(r=>(r['OT-AIR Work Request No.']||'').startsWith(_prefix)).length+savedNos.length;
+      const reqNo=_prefix+String(_cnt+1).padStart(3,'0');
+      const rec={'OT-AIR Work Request No.':reqNo,'Date':nowStr(),'Type_OT-AIR':type,'Building':bld,'Space':unit,
+        'Name':tenantInfo['Name']||row.tenant||'','Start time':st,'Finish time':et,
+        'Start Date':sd,'Finish Date':ed,'Monthly_End_Date':ed,'Monthly_Total_Hours':hrsTotal,'Monthly_Total_Days':days,
+        'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remarkFull};
+      gData.tenantReqs.push(rec);
+      gData.buildingAssigns.push(rec);
+      gData.engWork.push(rec);
+      savedNos.push(reqNo);
     }
   }
-  // Local fallback
-  const _now=new Date();
-  const _ym=_now.getFullYear()+String(_now.getMonth()+1).padStart(2,'0');
-  const _prefix='OT_AIR'+_ym;
-  const _cnt=gData.tenantReqs.filter(r=>(r['OT-AIR Work Request No.']||'').startsWith(_prefix)).length;
-  const reqNo=_prefix+String(_cnt+1).padStart(3,'0');
-  gData.tenantReqs.push({'OT-AIR Work Request No.':reqNo,'Date':sd,'Type_OT-AIR':type,'Building':bld,'Space':unit,'Name':tenantInfo['Name']||'','Start time':st,'Finish time':et,'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remarkFull,'Monthly_End_Date':ed,'Monthly_Total_Days':days,'Monthly_Total_Hours':hrsTotal});
-  if(sb){sb.disabled=false; sb.textContent='📅 ส่งคำขอ Monthly';}
-  renderAllModules(); closeMod('mod-new-req');
-  toast('✅ บันทึก Monthly OT '+reqNo+' — '+days+' วัน / '+hrsTotal+' ชม.รวม (Local)');
+
+  _submitting=false;
+  if(sb){sb.disabled=false; sb.textContent='📤 ส่งคำขอ Monthly';}
+  if(savedNos.length){
+    closeMod('mod-new-req');
+    initUnitRows(); // reset unit rows
+    toast(`✅ บันทึก Monthly OT ${savedNos.length} รายการ: ${savedNos.join(', ')} — ${days} วัน / ${hrsTotal} ชม.รวม`);
+    setTimeout(async()=>{gData={tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[]};await loadAllLive();renderAllModules();},1500);
+  }
+  if(hasError) toast('⚠️ บางรายการบันทึกไม่สำเร็จ กรุณาตรวจสอบ');
 }
 
 // ============================================================
