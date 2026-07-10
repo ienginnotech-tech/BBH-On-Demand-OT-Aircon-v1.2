@@ -1409,9 +1409,32 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
     </div>
 
     <!-- MULTI-UNIT SECTION -->
-    <div style="margin:10px 0 6px;display:flex;align-items:center;justify-content:space-between">
+    <div style="margin:10px 0 6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
       <label class="flabel" style="margin:0">Space / Unit <span style="color:var(--text3);font-size:10px">(เพิ่มได้สูงสุด 5 Unit)</span></label>
-      <button class="btn btn-g btn-sm" onclick="addUnitRow()" id="btn-add-unit">+ เพิ่ม Unit</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-o btn-sm" id="btn-pattern-weekday" style="display:none" onclick="openDayPattern('weekday')" title="เลือกวันจันทร์-ศุกร์ทั้งเดือนในคลิกเดียว">🗓️ จ-ศ (Weekday)</button>
+        <button class="btn btn-o btn-sm" id="btn-pattern-holiday" style="display:none" onclick="openDayPattern('holiday')" title="เลือกวันเสาร์-อาทิตย์ + วันหยุดนักขัตฤกษ์ทั้งเดือนในคลิกเดียว">🎌 ส-อา + นักขัตฤกษ์</button>
+        <button class="btn btn-g btn-sm" onclick="addUnitRow()" id="btn-add-unit">+ เพิ่ม Unit</button>
+      </div>
+    </div>
+    <!-- Day Pattern Picker Panel -->
+    <div id="day-pattern-panel" style="display:none;margin-bottom:10px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--accent)" id="day-pattern-title">เลือกวันที่แบบ Weekday</div>
+        <button class="btn btn-r btn-sm" onclick="closeDayPattern()">✕ ปิด</button>
+      </div>
+      <div class="fg" style="margin-bottom:10px"><label class="flabel">เลือกเดือนที่ต้องการ</label>
+        <input class="finput" type="month" id="dp-month" onchange="generateDayPatternList()"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div class="fg"><label class="flabel">เวลาเริ่ม (ทุกวันที่เลือก)</label><input class="finput" type="time" id="dp-start-time" value="20:00"></div>
+        <div class="fg"><label class="flabel">เวลาสิ้นสุด (ทุกวันที่เลือก)</label><input class="finput" type="time" id="dp-end-time" value="00:00"></div>
+      </div>
+      <div id="dp-day-list" style="max-height:220px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;margin-bottom:10px"></div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
+        เลือกไว้แล้ว <strong id="dp-count" style="color:var(--accent)">0</strong> วัน —
+        <span style="color:var(--amber)">■ ส-อา</span> <span style="color:var(--rose)">■ นักขัตฤกษ์🎌</span> ถ้าไม่ตรงกับที่ต้องการ ติ๊กออก/ติ๊กเพิ่มเองได้เลย
+      </div>
+      <button class="btn btn-sm" style="background:#00c853;color:#fff;border-color:#00c853;font-weight:700" onclick="applyDayPattern()">✓ ใช้วันที่ที่เลือกไว้</button>
     </div>
     <!-- โหมดเวลา -->
     <div style="display:flex;gap:8px;margin-bottom:8px;font-size:11px">
@@ -1441,14 +1464,27 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
 
     <!-- TAB: MONTHLY -->
     <div id="tab-panel-monthly" style="display:none">
-      <div style="font-size:10px;color:var(--accent);margin:12px 0 10px;padding:7px 12px;background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.15);border-radius:3px">
-        ⚡ คำนวณชั่วโมงรวมอัตโนมัติ = (วันสิ้นสุด − วันเริ่ม + 1) × ชั่วโมงต่อวัน
+      <!-- แสดงเมื่อ "ยังไม่ได้" ใช้ปุ่มเลือกวันแบบ Weekday/Holiday — กรอกวันที่/เวลาเองตามปกติ -->
+      <div id="mn-manual-datetime">
+        <div style="font-size:10px;color:var(--accent);margin:12px 0 10px;padding:7px 12px;background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.15);border-radius:3px">
+          ⚡ คำนวณชั่วโมงรวมอัตโนมัติ = (วันสิ้นสุด − วันเริ่ม + 1) × ชั่วโมงต่อวัน
+        </div>
+        <div class="form-grid">
+          <div class="fg"><label class="flabel">วันที่เริ่ม</label><input class="finput" type="date" id="mn-start-date" onchange="calcMonthlyHours()"></div>
+          <div class="fg"><label class="flabel">วันที่สิ้นสุด</label><input class="finput" type="date" id="mn-end-date" onchange="calcMonthlyHours()"></div>
+          <div class="fg"><label class="flabel">เวลาเริ่ม</label><input class="finput" type="time" id="mn-start-time" value="20:00" onchange="calcMonthlyHours()"></div>
+          <div class="fg"><label class="flabel">เวลาสิ้นสุด</label><input class="finput" type="time" id="mn-end-time" value="00:00" onchange="calcMonthlyHours()"></div>
+        </div>
+      </div>
+      <!-- แสดงเมื่อ "ใช้" ปุ่มเลือกวันแบบ Weekday/Holiday แล้ว — ซ่อนช่องกรอกวันที่/เวลาแบบต่อเนื่อง เพราะสับสน (วันที่ไม่ต่อเนื่องกัน) -->
+      <div id="mn-pattern-summary" style="display:none;margin:12px 0;padding:12px 14px;background:rgba(0,180,255,.06);border:1px solid rgba(0,180,255,.2);border-radius:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:11px;font-weight:700;color:#00b4ff" id="mn-pattern-summary-title">📅 เลือกวันแบบ Pattern แล้ว</div>
+          <button class="btn btn-o btn-sm" onclick="resetDayPattern()">🔄 เลือกใหม่ / แก้ไขวันที่เอง</button>
+        </div>
+        <div id="mn-pattern-summary-body" style="font-size:12px;color:var(--text2)"></div>
       </div>
       <div class="form-grid">
-        <div class="fg"><label class="flabel">วันที่เริ่ม</label><input class="finput" type="date" id="mn-start-date" onchange="calcMonthlyHours()"></div>
-        <div class="fg"><label class="flabel">วันที่สิ้นสุด</label><input class="finput" type="date" id="mn-end-date" onchange="calcMonthlyHours()"></div>
-        <div class="fg"><label class="flabel">เวลาเริ่ม</label><input class="finput" type="time" id="mn-start-time" value="20:00" onchange="calcMonthlyHours()"></div>
-        <div class="fg"><label class="flabel">เวลาสิ้นสุด</label><input class="finput" type="time" id="mn-end-time" value="00:00" onchange="calcMonthlyHours()"></div>
         <div class="fg"><label class="flabel">ผู้แจ้ง</label><input class="finput" type="text" id="mn-name" placeholder="ชื่อ-นามสกุล"></div>
         <div class="fg"><label class="flabel">โทรศัพท์</label><input class="finput" type="tel" id="mn-tel" placeholder="0XX-XXX-XXXX"></div>
         <div class="fg full"><label class="flabel">หมายเหตุ</label><textarea class="ftextarea" id="mn-remark"></textarea></div>
@@ -2961,6 +2997,10 @@ function openNewReqModal(){
   openMod('mod-new-req');
   switchReqTab('daily'); // default รายวัน
   setTimeout(()=>initUnitRows(), 100); // init unit rows
+  _mnDayOverride = null;
+  closeDayPattern();
+  const mdt = document.getElementById('mn-manual-datetime'); if(mdt) mdt.style.display = '';
+  const sumBox = document.getElementById('mn-pattern-summary'); if(sumBox) sumBox.style.display = 'none';
 }
 
 function switchReqTab(tab){
@@ -2968,6 +3008,11 @@ function switchReqTab(tab){
   // panel visibility
   document.getElementById('tab-panel-daily').style.display = isDaily ? '' : 'none';
   document.getElementById('tab-panel-monthly').style.display = isDaily ? 'none' : '';
+  // ปุ่มเลือกวันแบบ Weekday/Holiday ใช้ได้เฉพาะ Monthly
+  const bw = document.getElementById('btn-pattern-weekday'), bh = document.getElementById('btn-pattern-holiday');
+  if(bw) bw.style.display = isDaily ? 'none' : '';
+  if(bh) bh.style.display = isDaily ? 'none' : '';
+  if(isDaily) closeDayPattern();
   // tab button styles
   const td = document.getElementById('tab-daily');
   const tm = document.getElementById('tab-monthly');
@@ -2998,6 +3043,103 @@ function fillMonthlyTenantInfo(){
   if(el) el.value = t ? (t['Name']||'') : '';
 }
 
+// ============================================================
+// DAY PATTERN PICKER — เลือกวันแบบ Weekday (จ-ศ) หรือ Holiday (ส-อา+นักขัตฤกษ์) ทีเดียวทั้งเดือน
+// ใช้สำหรับคำขอ Monthly ที่ใช้ซ้ำทุกสัปดาห์ในรูปแบบเดียวกัน (เวลาเดียวกัน คนละ Unit)
+// ============================================================
+let _mnDayOverride = null; // {sd, ed, dayCount, dates} — ถ้า set ไว้ จะใช้แทนการนับวันแบบต่อเนื่องปกติ
+let _dpMode = null; // 'weekday' | 'holiday'
+
+function openDayPattern(mode){
+  const bld = v('nr-bld');
+  if(!bld){ toast('⚠️ กรุณาเลือก Building ก่อน (ใช้เช็ควันหยุดนักขัตฤกษ์ของอาคารนั้น)'); return; }
+  _dpMode = mode;
+  document.getElementById('day-pattern-title').textContent = mode==='weekday' ? '🗓️ เลือกวันที่แบบ Weekday (จันทร์-ศุกร์)' : '🎌 เลือกวันที่แบบ Holiday (เสาร์-อาทิตย์ + นักขัตฤกษ์)';
+  document.getElementById('day-pattern-panel').style.display = 'block';
+  const monthEl = document.getElementById('dp-month');
+  if(!monthEl.value){
+    const now = new Date();
+    monthEl.value = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  }
+  generateDayPatternList();
+}
+function closeDayPattern(){
+  const panel = document.getElementById('day-pattern-panel');
+  if(panel) panel.style.display = 'none';
+}
+function generateDayPatternList(){
+  const bld = v('nr-bld');
+  const ym = v('dp-month');
+  if(!ym || !bld) return;
+  const [y,m] = ym.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const listEl = document.getElementById('dp-day-list');
+  const dayNamesTh = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  let html = '';
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const dow = new Date(y, m-1, d).getDay(); // 0=อา,6=ส
+    const isWknd = (dow===0||dow===6);
+    const isHol = isHoliday(iso, bld);
+    const matchesPattern = _dpMode==='weekday' ? (!isWknd && !isHol) : (isWknd || isHol);
+    const checked = matchesPattern ? 'checked' : '';
+    const labelColor = isHol ? 'color:var(--rose)' : (isWknd ? 'color:var(--amber)' : 'color:var(--text2)');
+    html += `<label style="display:flex;align-items:center;gap:4px;font-size:10px;padding:4px 6px;background:var(--surface);border-radius:4px;cursor:pointer">
+      <input type="checkbox" data-date="${iso}" ${checked} onchange="updateDpCount()">
+      <span style="${labelColor}">${d} (${dayNamesTh[dow]})${isHol?' 🎌':''}</span>
+    </label>`;
+  }
+  listEl.innerHTML = html;
+  updateDpCount();
+}
+function updateDpCount(){
+  const checked = document.querySelectorAll('#dp-day-list input[type=checkbox]:checked');
+  const el = document.getElementById('dp-count');
+  if(el) el.textContent = checked.length;
+}
+function applyDayPattern(){
+  const checked = Array.from(document.querySelectorAll('#dp-day-list input[type=checkbox]:checked')).map(el=>el.dataset.date).sort();
+  if(!checked.length){ toast('⚠️ กรุณาเลือกอย่างน้อย 1 วัน'); return; }
+  const dpSt = v('dp-start-time') || '20:00';
+  const dpEt = v('dp-end-time') || '00:00';
+  _mnDayOverride = { sd: checked[0], ed: checked[checked.length-1], dayCount: checked.length, dates: checked, pattern: _dpMode };
+  document.getElementById('mn-start-date').value = checked[0];
+  document.getElementById('mn-end-date').value = checked[checked.length-1];
+  document.getElementById('mn-start-time').value = dpSt;
+  document.getElementById('mn-end-time').value = dpEt;
+  closeDayPattern();
+  calcMonthlyHours();
+
+  // ซ่อนช่องกรอกวันที่/เวลาแบบต่อเนื่อง (สับสน เพราะวันที่จริงไม่ต่อเนื่องกัน) แสดงสรุปแบบอ่านอย่างเดียวแทน
+  document.getElementById('mn-manual-datetime').style.display = 'none';
+  const sumBox = document.getElementById('mn-pattern-summary');
+  const patternLabel = _dpMode==='weekday' ? '🗓️ Weekday (จ-ศ)' : '🎌 Holiday (ส-อา + นักขัตฤกษ์)';
+  document.getElementById('mn-pattern-summary-title').textContent = '📅 เลือกวันแบบ ' + patternLabel + ' แล้ว';
+  document.getElementById('mn-pattern-summary-body').innerHTML =
+    `จำนวนวันที่เลือก: <strong style="color:var(--accent)">${checked.length} วัน</strong> &nbsp;|&nbsp; `+
+    `ช่วงวันที่ครอบคลุม: <strong>${fmtDate(checked[0])} – ${fmtDate(checked[checked.length-1])}</strong> &nbsp;|&nbsp; `+
+    `เวลา: <strong>${dpSt} – ${dpEt}</strong>`;
+  sumBox.style.display = 'block';
+  toast(`✅ เลือกวันที่แบบ ${_dpMode==='weekday'?'Weekday (จ-ศ)':'Holiday (ส-อา+นักขัตฤกษ์)'} แล้ว ${checked.length} วัน`);
+}
+// ยกเลิก Pattern ที่เลือกไว้ กลับไปกรอกวันที่/เวลาเองแบบต่อเนื่องตามปกติ
+function resetDayPattern(){
+  _mnDayOverride = null;
+  document.getElementById('mn-manual-datetime').style.display = '';
+  document.getElementById('mn-pattern-summary').style.display = 'none';
+  document.getElementById('mn-start-date').value = '';
+  document.getElementById('mn-end-date').value = '';
+  const sumEl = document.getElementById('mn-summary');
+  if(sumEl) sumEl.style.display = 'none';
+}
+// คืนจำนวนวันที่ควรใช้คิดเงิน — ถ้ามี pattern override ที่ตรงกับช่วงวันที่ปัจจุบัน ใช้ dayCount จาก override
+// (เพราะวันที่ไม่ต่อเนื่องกัน นับแบบ ed-sd+1 ธรรมดาไม่ได้) ถ้าผู้ใช้แก้วันที่เองจนไม่ตรงกับ override แล้ว ให้กลับไปนับแบบต่อเนื่องปกติ
+function getMonthlyDayCount(sd, ed){
+  if(_mnDayOverride && _mnDayOverride.sd===sd && _mnDayOverride.ed===ed) return _mnDayOverride.dayCount;
+  const d1=new Date(sd), d2=new Date(ed);
+  return Math.round((d2-d1)/86400000)+1;
+}
+
 function calcMonthlyHours(){
   const sd = document.getElementById('mn-start-date').value;
   const ed = document.getElementById('mn-end-date').value;
@@ -3007,11 +3149,11 @@ function calcMonthlyHours(){
   if(!sd || !ed){ if(sumEl) sumEl.style.display='none'; return; }
   const d1 = new Date(sd), d2 = new Date(ed);
   if(d2 < d1){ toast('⚠️ วันสิ้นสุดต้องหลังวันเริ่ม'); if(sumEl) sumEl.style.display='none'; return; }
-  const days = Math.round((d2 - d1) / 86400000) + 1;
+  const days = getMonthlyDayCount(sd, ed);
   const hrsDay = ((timeToMin(et) - timeToMin(st) + 1440) % 1440) / 60;
   const hrsTotal = days * hrsDay;
   if(sumEl) sumEl.style.display = 'block';
-  se('mn-days', days + ' วัน');
+  se('mn-days', days + ' วัน' + (_mnDayOverride && _mnDayOverride.sd===sd && _mnDayOverride.ed===ed ? (_mnDayOverride.pattern==='weekday'?' (จ-ศ)':' (ส-อา+นักขัตฤกษ์)') : ''));
   se('mn-hrs-day', hrsDay.toFixed(1) + ' ชม.');
   se('mn-hrs-total', hrsTotal.toFixed(1) + ' ชม.');
 }
@@ -3032,7 +3174,73 @@ async function submitMonthlyRequest(){
   if(!sd||!ed||!st||!et||!name){toast('⚠️ กรุณากรอกข้อมูลให้ครบ (วันที่/เวลา/ผู้แจ้ง)');return;}
   const d1=new Date(sd), d2=new Date(ed);
   if(d2<d1){toast('⚠️ วันสิ้นสุดต้องหลังวันเริ่ม');return;}
-  const days = Math.round((d2-d1)/86400000)+1;
+  const isPattern = _mnDayOverride && _mnDayOverride.sd===sd && _mnDayOverride.ed===ed;
+
+  // ถ้าใช้ Weekday/Holiday Pattern มา — แยกเป็นคำขอรายวันแยกต่างหากทีละวัน ทีละ Unit
+  // (แทนที่จะรวมเป็นคำขอ Monthly ก้อนเดียว) เพื่อให้ช่างเปิด-ปิดแยกแต่ละวันได้ และออกบิลแสดงวันที่แยกให้ลูกค้าเห็นชัด
+  if(isPattern){
+    const dateList = _mnDayOverride.dates.slice();
+    const patternLabel = _mnDayOverride.pattern==='weekday' ? 'จ-ศ (Weekday)' : 'ส-อา+นักขัตฤกษ์ (Holiday)';
+    const totalJobs = unitRows.length * dateList.length;
+    if(totalJobs > 40 && !confirm(`กำลังจะสร้างคำขอแยกรายวันทั้งหมด ${totalJobs} รายการ (${unitRows.length} Unit × ${dateList.length} วัน) อาจใช้เวลาสักครู่ ยืนยันที่จะสร้างหรือไม่?`)){
+      return;
+    }
+    _submitting=true;
+    const sb = document.querySelector('#tab-panel-monthly button[onclick="submitMonthlyRequest()"]');
+    if(sb){sb.disabled=true;}
+    const savedNos=[]; let hasError=false; let doneCount=0;
+    for(const row of unitRows){
+      const unit = row.unit;
+      const tenantInfo = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
+      for(const dateStr of dateList){
+        const remarkFull = `[MONTHLY-BATCH ${patternLabel}]${remark?' '+remark:''}`;
+        if(sb) sb.textContent = `⏳ กำลังบันทึก... (${++doneCount}/${totalJobs})`;
+        if(USE_LIVE_API){
+          try{
+            const res = await apiGET({action:'submitRequest', data:encodeURIComponent(JSON.stringify({
+              building:bld, space:unit, type, date:dateStr,
+              startTime:st, endTime:et,
+              requester:name, tel, remark:remarkFull,
+              tenantCode:tenantInfo['Code']||'',
+              tenantName:tenantInfo['Name']||row.tenant||'',
+              area:tenantInfo['Area']||'',
+              isMonthly:false,
+            }))});
+            if(res && res.reqNo) savedNos.push(res.reqNo);
+            else hasError=true;
+          }catch(e){ hasError=true; }
+        } else {
+          const _now=new Date();
+          const _ym=_now.getFullYear()+String(_now.getMonth()+1).padStart(2,'0');
+          const _prefix='OT_AIR'+_ym;
+          const _cnt=gData.tenantReqs.filter(r=>(r['OT-AIR Work Request No.']||'').startsWith(_prefix)).length+savedNos.length;
+          const reqNo=_prefix+String(_cnt+1).padStart(3,'0');
+          const rec={'OT-AIR Work Request No.':reqNo,'Date':dateStr,'Type_OT-AIR':type,'Building':bld,'Space':unit,
+            'Name':tenantInfo['Name']||row.tenant||'','Start time':st,'Finish time':et,
+            'Start Date':dateStr,'Finish Date':dateStr,
+            'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remarkFull};
+          gData.tenantReqs.push(rec);
+          gData.buildingAssigns.push(rec);
+          gData.engWork.push(rec);
+          savedNos.push(reqNo);
+        }
+      }
+    }
+    _submitting=false;
+    if(sb){sb.disabled=false; sb.textContent='📅 ส่งคำขอ Monthly';}
+    if(savedNos.length){
+      closeMod('mod-new-req');
+      initUnitRows();
+      resetDayPattern();
+      toast(`✅ สร้างคำขอแยกรายวันแล้ว ${savedNos.length} รายการ (${unitRows.length} Unit × ${dateList.length} วัน)`);
+      setTimeout(async()=>{gData={tenantReqs:[],buildingAssigns:[],engWork:[],csReport:[]};await loadAllLive();renderAllModules();},1500);
+    }
+    if(hasError) toast('⚠️ บางรายการบันทึกไม่สำเร็จ กรุณาตรวจสอบ');
+    return;
+  }
+
+  // โหมดปกติ (กรอกช่วงวันที่ต่อเนื่องเอง ไม่ได้ใช้ Pattern) — รวมเป็นคำขอ Monthly ก้อนเดียวเหมือนเดิม
+  const days = getMonthlyDayCount(sd, ed);
   const hrsDay = ((timeToMin(et)-timeToMin(st)+1440)%1440)/60;
   const hrsTotal = (days * hrsDay).toFixed(2);
   const remarkFull = `[MONTHLY ${sd} ถึง ${ed} | ${days} วัน × ${hrsDay.toFixed(1)} ชม. = ${hrsTotal} ชม.รวม]${remark?' '+remark:''}`;
@@ -3081,7 +3289,7 @@ async function submitMonthlyRequest(){
   }
 
   _submitting=false;
-  if(sb){sb.disabled=false; sb.textContent='📤 ส่งคำขอ Monthly';}
+  if(sb){sb.disabled=false; sb.textContent='📅 ส่งคำขอ Monthly';}
   if(savedNos.length){
     closeMod('mod-new-req');
     initUnitRows(); // reset unit rows
@@ -4055,6 +4263,9 @@ async function loadUnits(){
   const nameEl=document.getElementById('nr-tenant-name');
   const searchEl=document.getElementById('nr-unit-search');
   const countEl=document.getElementById('nr-unit-count');
+  // nr-unit เป็น dropdown เดี่ยวรุ่นเก่า (ก่อนมีระบบ Multi-Unit) — ตอนนี้ไม่มี element นี้ในหน้าแล้ว
+  // เพราะ addUnitRow()/renderUnitRows() ดึงและแสดงรายการ Unit เองอิสระอยู่แล้ว ฟังก์ชันนี้จึงไม่มีอะไรต้องทำต่อ
+  if(!sel) return;
   sel.innerHTML='<option value="">— กำลังโหลด —</option>';
   if(nameEl) nameEl.value='';
   if(searchEl) searchEl.value='';
