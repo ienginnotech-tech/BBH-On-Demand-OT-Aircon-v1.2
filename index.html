@@ -4452,7 +4452,11 @@ function filterRates(){
 function exportCSV(){
   const data=filterByBuilding(gData.csReport);
   if(!data.length){toast('⚠️ ไม่มีข้อมูล');return;}
-  const keys=Object.keys(data[0]);
+  // รวมชื่อคอลัมน์จากทุกแถว ไม่ใช่แค่แถวแรก — เพราะถ้าแถวแรกบังเอิญไม่มีค่าในบางคอลัมน์ (เช่น field ที่เพิ่งเพิ่มใหม่)
+  // Object.keys(data[0]) เพียงอย่างเดียวจะพลาดคอลัมน์นั้นไปทั้งคอลัมน์ ทำให้หัวข้อ CSV หายแต่ข้อมูลยังโผล่มา (คอลัมน์เลื่อนไม่ตรงหัว)
+  const keySet = new Set();
+  data.forEach(r=>Object.keys(r).forEach(k=>keySet.add(k)));
+  const keys=Array.from(keySet);
   const csv=[keys.join(','),...data.map(r=>keys.map(k=>`"${r[k]||''}"`).join(','))].join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
