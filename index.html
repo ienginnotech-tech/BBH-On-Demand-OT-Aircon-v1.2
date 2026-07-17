@@ -1509,6 +1509,26 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
         </div>
         <div id="mn-pattern-summary-body" style="font-size:12px;color:var(--text2)"></div>
       </div>
+      <!-- MINIMUM CHARGE MODE — CLS เลือกเองตามเงื่อนไขที่ตกลงกับลูกค้า -->
+      <div class="fg full" style="margin:12px 0;padding:10px 12px;background:var(--surface2);border-radius:6px">
+        <label class="flabel">💰 โหมดคิดค่าขั้นต่ำ (เฉพาะ Rate Code ที่มีขั้นต่ำ)</label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="radio" name="min-charge-mode" value="every" checked onchange="onMinChargeModeChange()"> ขั้นต่ำทุกวัน (คิดทุกวันที่ขอ)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="radio" name="min-charge-mode" value="first" onchange="onMinChargeModeChange()"> ขั้นต่ำครั้งแรก (คิดแค่วันแรกที่ขอ)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="radio" name="min-charge-mode" value="custom" onchange="onMinChargeModeChange()"> กำหนดเอง (ติ๊กเลือกวันที่เอง)
+          </label>
+        </div>
+        <div id="min-charge-custom-panel" style="display:none;margin-top:10px;padding:10px;background:var(--surface);border-radius:6px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">ติ๊กเฉพาะวันที่ต้องการให้คิดค่าขั้นต่ำ — วันที่ไม่ติ๊กจะยังคิด Area Charge ตามปกติ แค่ไม่บวกขั้นต่ำ</div>
+          <div id="min-charge-date-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;max-height:180px;overflow-y:auto"></div>
+          <div style="font-size:11px;color:var(--text2);margin-top:8px">เลือกไว้ <strong id="min-charge-count" style="color:var(--accent)">0</strong> วัน</div>
+        </div>
+      </div>
       <div class="form-grid">
         <div class="fg"><label class="flabel">ผู้แจ้ง</label><input class="finput" type="text" id="mn-name" placeholder="ชื่อ-นามสกุล"></div>
         <div class="fg"><label class="flabel">โทรศัพท์</label><input class="finput" type="tel" id="mn-tel" placeholder="0XX-XXX-XXXX"></div>
@@ -2267,11 +2287,16 @@ function dedup(arr){
   return Array.from(map.values());
 }
 
+// เรียงข้อมูลให้รายการล่าสุดอยู่บนสุด — ใช้ลำดับการเพิ่มข้อมูลจริง (Sheet ต่อท้ายแถวใหม่ด้านล่างเสมอ)
+// จึงแค่กลับลำดับ array ก็เพียงพอ ไม่ต้องพึ่ง reqNo/วันที่ ที่รูปแบบอาจไม่สม่ำเสมอ
+function sortNewestFirst(arr){ return arr.slice().reverse(); }
+
 function renderTenantTable(){
   let data = filterByBuilding(gData.tenantReqs);
   const wrap = document.getElementById('tenant-table-wrap'); if(!wrap) return;
   populateSearchDateDropdowns('tn', data, r=>r['Date']||r['Start Date']);
   data = applySearchDateFilter(data, 'tn', r=>r['Date']||r['Start Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
+  data = sortNewestFirst(data);
   if(!data.length){wrap.innerHTML=emptyState('ไม่พบข้อมูลที่ตรงกับเงื่อนไข');return;}
   const mBadge = '<span style="display:inline-block;margin-left:4px;padding:1px 5px;font-size:9px;font-weight:700;letter-spacing:.5px;border-radius:3px;background:rgba(0,180,255,.15);color:#00b4ff;border:1px solid rgba(0,180,255,.3);vertical-align:middle">📅 MONTHLY</span>';
   wrap.innerHTML='<div class="table-wrap"><table>'
@@ -2306,6 +2331,7 @@ function renderBuildingTable(){
   let data = filterByBuilding(gData.buildingAssigns);
   populateSearchDateDropdowns('cl', data, r=>r['Start Date']||r['Date']);
   data = applySearchDateFilter(data, 'cl', r=>r['Start Date']||r['Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
+  data = sortNewestFirst(data);
   renderBuildingRows(data, document.getElementById('building-table-wrap'));
 }
 
@@ -2372,7 +2398,7 @@ function setFB(btn,f){
     f==='ok-b'?base.filter(r=>!!r['Staff Name']&&String(r['Admin helpdesk (Acknowledge/Reject)']||'').toLowerCase()!=='reject'):
     f==='reject-b'?base.filter(r=>String(r['Admin helpdesk (Acknowledge/Reject)']||'').toLowerCase()==='reject'):
     base;
-  renderBuildingRows(filtered, document.getElementById('building-table-wrap'));
+  renderBuildingRows(sortNewestFirst(filtered), document.getElementById('building-table-wrap'));
 }
 
 
@@ -2381,6 +2407,7 @@ function renderEngTable(){
   let data = filterByBuilding(gData.engWork);
   populateSearchDateDropdowns('en', data, r=>r['Start Date']||r['Date']);
   data = applySearchDateFilter(data, 'en', r=>r['Start Date']||r['Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
+  data = sortNewestFirst(data);
   renderEngRows(data, document.getElementById('eng-table-wrap'));
 }
 
@@ -2477,13 +2504,14 @@ function setFE(btn,f){
     f==='opened-e'?base.filter(r=>r['Open_OT-Air(Time)']&&!r['Close_OT-Air(Time)']):
     f==='done-e'?base.filter(r=>!!r['Close_OT-Air(Time)']):
     base;
-  renderEngRows(filtered, document.getElementById('eng-table-wrap'));
+  renderEngRows(sortNewestFirst(filtered), document.getElementById('eng-table-wrap'));
 }
 
 function renderCSTable(){
   let data = filterByBuilding(gData.csReport);
   populateSearchDateDropdowns('cr', data, r=>r['Date']);
   data = applySearchDateFilter(data, 'cr', r=>r['Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
+  data = sortNewestFirst(data);
   renderCSRows(data, document.getElementById('cs-table-wrap'));
 }
 
@@ -2558,7 +2586,7 @@ function setFCS(btn,bld){
   btn.classList.add('active');
   const base=filterByBuilding(gData.csReport);
   const filtered=bld?base.filter(r=>(r['Building']||'')===bld):base;
-  renderCSRows(filtered, document.getElementById('cs-table-wrap'));
+  renderCSRows(sortNewestFirst(filtered), document.getElementById('cs-table-wrap'));
 }
 
 function renderRateTable(data){
@@ -2626,11 +2654,16 @@ async function doAck(i){
 }
 async function doReject(i){
   const r=gData.buildingAssigns[i]; if(!r)return;
-  if(!confirm('ยืนยัน Reject คำขอ '+r['OT-AIR Work Request No.']+'?'))return;
-  r['Admin helpdesk (Acknowledge/Reject)']='Reject';
-  if(USE_LIVE_API) await apiGET({action:'acknowledge',reqNo:r['OT-AIR Work Request No.'],decision:'Reject'});
-  renderBuildingTable(); updateAllStats();
-  toast('❌ Reject คำขอ '+r['OT-AIR Work Request No.']);
+  const no = r['OT-AIR Work Request No.'];
+  if(!confirm('⚠️ ยืนยันลบคำขอ '+no+' ถาวร?\n\nการลบนี้จะเอาข้อมูลออกจากทุกชีต (Tenant/CLS/Engineering/CS Report) และกู้คืนไม่ได้'))return;
+  if(USE_LIVE_API) await apiGET({action:'deleteRequest', reqNo:no});
+  // เอาออกจากทุก array ในเครื่องด้วย ให้หน้าจออัปเดตทันทีไม่ต้องรอโหลดใหม่
+  gData.buildingAssigns = gData.buildingAssigns.filter(x=>x['OT-AIR Work Request No.']!==no);
+  gData.tenantReqs      = gData.tenantReqs.filter(x=>x['OT-AIR Work Request No.']!==no);
+  gData.engWork         = gData.engWork.filter(x=>x['OT-AIR Work Request No.']!==no);
+  gData.csReport        = gData.csReport.filter(x=>x['OT-AIR Work Request No.']!==no);
+  renderBuildingTable(); renderTenantTable(); renderEngTable(); renderCSTable(); updateAllStats();
+  toast('🗑️ ลบคำขอ '+no+' ออกจากระบบแล้ว');
 }
 function doAssign(i){
   const r=gData.buildingAssigns[i]; if(!r)return;
@@ -2893,11 +2926,15 @@ async function doEngAck(i){
 }
 async function doEngReject(i){
   const r=gData.engWork[i]; if(!r)return;
-  if(!confirm('ยืนยัน Reject งาน '+r['OT-AIR Work Request No.']+'?'))return;
-  r['Engineering Action(Acknowledge/Reject)']='Reject';
-  if(USE_LIVE_API) await apiGET({action:'engAck',data:encodeURIComponent(JSON.stringify({reqNo:r['OT-AIR Work Request No.'],decision:'Reject'}))});
-  renderEngTable(); updateAllStats();
-  toast('❌ Reject งาน '+r['OT-AIR Work Request No.']);
+  const no = r['OT-AIR Work Request No.'];
+  if(!confirm('⚠️ ยืนยันลบงาน '+no+' ถาวร?\n\nการลบนี้จะเอาข้อมูลออกจากทุกชีต (Tenant/CLS/Engineering/CS Report) และกู้คืนไม่ได้'))return;
+  if(USE_LIVE_API) await apiGET({action:'deleteRequest', reqNo:no});
+  gData.buildingAssigns = gData.buildingAssigns.filter(x=>x['OT-AIR Work Request No.']!==no);
+  gData.tenantReqs      = gData.tenantReqs.filter(x=>x['OT-AIR Work Request No.']!==no);
+  gData.engWork         = gData.engWork.filter(x=>x['OT-AIR Work Request No.']!==no);
+  gData.csReport        = gData.csReport.filter(x=>x['OT-AIR Work Request No.']!==no);
+  renderBuildingTable(); renderTenantTable(); renderEngTable(); renderCSTable(); updateAllStats();
+  toast('🗑️ ลบงาน '+no+' ออกจากระบบแล้ว');
 }
 function engAction(i,type){
   const r0=gData.engWork[i]||{};
@@ -3176,6 +3213,57 @@ function getMonthlyDayCount(sd, ed){
   return Math.round((d2-d1)/86400000)+1;
 }
 
+// ============================================================
+// MINIMUM CHARGE MODE — เลือกว่าจะคิดขั้นต่ำวันไหนบ้าง (ทุกวัน / วันแรกวันเดียว / กำหนดเอง)
+// ============================================================
+// คืนรายการวันที่ทั้งหมดที่กำลังจะขอ (ใช้ทั้งกรณีเลือกผ่าน Pattern และกรอกช่วงต่อเนื่องเอง)
+function getCurrentMonthlyDateList(){
+  const sd = v('mn-start-date'), ed = v('mn-end-date');
+  if(_mnDayOverride && _mnDayOverride.sd===sd && _mnDayOverride.ed===ed) return _mnDayOverride.dates.slice();
+  if(!sd || !ed) return [];
+  const d1 = new Date(sd), d2 = new Date(ed);
+  if(isNaN(d1)||isNaN(d2)||d2<d1) return [];
+  const list = [];
+  let cur = new Date(d1);
+  while(cur <= d2){
+    list.push(cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0'));
+    cur.setDate(cur.getDate()+1);
+  }
+  return list;
+}
+function onMinChargeModeChange(){
+  const mode = document.querySelector('input[name="min-charge-mode"]:checked')?.value || 'every';
+  const panel = document.getElementById('min-charge-custom-panel');
+  if(mode !== 'custom'){ panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  const dates = getCurrentMonthlyDateList();
+  const listEl = document.getElementById('min-charge-date-list');
+  if(!dates.length){
+    listEl.innerHTML = '<div style="font-size:11px;color:var(--text3);grid-column:1/-1">กรุณาเลือกวันที่ก่อน (ผ่านปุ่ม Pattern หรือกรอกวันที่เริ่ม-สิ้นสุดเอง)</div>';
+    return;
+  }
+  listEl.innerHTML = dates.map(d=>{
+    const dd = d.split('-')[2];
+    return `<label style="display:flex;align-items:center;gap:4px;font-size:10px;padding:4px 6px;background:var(--surface2);border-radius:4px;cursor:pointer">
+      <input type="checkbox" data-date="${d}" checked onchange="updateMinChargeCount()">${fmtDate(d)}
+    </label>`;
+  }).join('');
+  updateMinChargeCount();
+}
+function updateMinChargeCount(){
+  const el = document.getElementById('min-charge-count');
+  if(el) el.textContent = document.querySelectorAll('#min-charge-date-list input:checked').length;
+}
+// คืนรายการวันที่ (ชุดย่อย) ที่ควรคิดค่าขั้นต่ำ ตามโหมดที่เลือกไว้ — ใช้ตอน submit จริง
+function getMinChargeDates(allDates){
+  const mode = document.querySelector('input[name="min-charge-mode"]:checked')?.value || 'every';
+  if(mode === 'every') return allDates.slice();
+  if(mode === 'first') return allDates.length ? [allDates.slice().sort()[0]] : [];
+  // custom
+  return Array.from(document.querySelectorAll('#min-charge-date-list input:checked')).map(el=>el.dataset.date);
+}
+
+
 function calcMonthlyHours(){
   const sd = document.getElementById('mn-start-date').value;
   const ed = document.getElementById('mn-end-date').value;
@@ -3216,6 +3304,8 @@ async function submitMonthlyRequest(){
   // (แทนที่จะรวมเป็นคำขอ Monthly ก้อนเดียว) เพื่อให้ช่างเปิด-ปิดแยกแต่ละวันได้ และออกบิลแสดงวันที่แยกให้ลูกค้าเห็นชัด
   if(isPattern){
     const dateList = _mnDayOverride.dates.slice();
+    const minChargeDates = new Set(getMinChargeDates(dateList));
+    const minModeLabel = {every:'ขั้นต่ำทุกวัน',first:'ขั้นต่ำครั้งแรก',custom:'ขั้นต่ำกำหนดเอง'}[document.querySelector('input[name="min-charge-mode"]:checked')?.value||'every'];
     const patternLabel = _mnDayOverride.pattern==='weekday' ? 'จ-ศ (Weekday)' : 'ส-อา+นักขัตฤกษ์ (Holiday)';
     const totalJobs = unitRows.length * dateList.length;
     if(totalJobs > 40 && !confirm(`กำลังจะสร้างคำขอแยกรายวันทั้งหมด ${totalJobs} รายการ (${unitRows.length} Unit × ${dateList.length} วัน) อาจใช้เวลาสักครู่ ยืนยันที่จะสร้างหรือไม่?`)){
@@ -3229,7 +3319,8 @@ async function submitMonthlyRequest(){
       const unit = row.unit;
       const tenantInfo = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
       for(const dateStr of dateList){
-        const remarkFull = `[MONTHLY-BATCH ${patternLabel}]${remark?' '+remark:''}`;
+        const applyMin = minChargeDates.has(dateStr);
+        const remarkFull = `[FROM-PATTERN ${patternLabel} | ${minModeLabel}]${remark?' '+remark:''}`;
         if(sb) sb.textContent = `⏳ กำลังบันทึก... (${++doneCount}/${totalJobs})`;
         if(USE_LIVE_API){
           try{
@@ -3241,6 +3332,7 @@ async function submitMonthlyRequest(){
               tenantName:tenantInfo['Name']||row.tenant||'',
               area:tenantInfo['Area']||'',
               isMonthly:false,
+              applyMinCharge: applyMin ? 'Yes' : 'No',
             }))});
             if(res && res.reqNo) savedNos.push(res.reqNo);
             else hasError=true;
@@ -3253,7 +3345,7 @@ async function submitMonthlyRequest(){
           const reqNo=_prefix+String(_cnt+1).padStart(3,'0');
           const rec={'OT-AIR Work Request No.':reqNo,'Date':dateStr,'Type_OT-AIR':type,'Building':bld,'Space':unit,
             'Name':tenantInfo['Name']||row.tenant||'','Start time':st,'Finish time':et,
-            'Start Date':dateStr,'Finish Date':dateStr,
+            'Start Date':dateStr,'Finish Date':dateStr,'Apply_Min_Charge': applyMin?'Yes':'No',
             'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remarkFull};
           gData.tenantReqs.push(rec);
           gData.buildingAssigns.push(rec);
@@ -3279,7 +3371,11 @@ async function submitMonthlyRequest(){
   const days = getMonthlyDayCount(sd, ed);
   const hrsDay = ((timeToMin(et)-timeToMin(st)+1440)%1440)/60;
   const hrsTotal = (days * hrsDay).toFixed(2);
-  const remarkFull = `[MONTHLY ${sd} ถึง ${ed} | ${days} วัน × ${hrsDay.toFixed(1)} ชม. = ${hrsTotal} ชม.รวม]${remark?' '+remark:''}`;
+  // จำนวนวันที่ต้องคิดค่าขั้นต่ำ ตามโหมดที่เลือกไว้ (อาจน้อยกว่าจำนวนวันทั้งหมด ถ้าเลือก "ครั้งแรก"/"กำหนดเอง")
+  const allDatesForMin = getCurrentMonthlyDateList();
+  const minChargeDays = getMinChargeDates(allDatesForMin).length || 1;
+  const minModeLabel = {every:'ขั้นต่ำทุกวัน',first:'ขั้นต่ำครั้งแรก',custom:'ขั้นต่ำกำหนดเอง'}[document.querySelector('input[name="min-charge-mode"]:checked')?.value||'every'];
+  const remarkFull = `[MONTHLY ${sd} ถึง ${ed} | ${days} วัน × ${hrsDay.toFixed(1)} ชม. = ${hrsTotal} ชม.รวม | ${minModeLabel} (${minChargeDays} วัน)]${remark?' '+remark:''}`;
 
   _submitting=true;
   const sb = document.querySelector('#tab-panel-monthly .btn-p');
@@ -3302,6 +3398,7 @@ async function submitMonthlyRequest(){
           tenantName:tenantInfo['Name']||row.tenant||'',
           area:tenantInfo['Area']||'',
           isMonthly:true,
+          monthlyMinChargeDays: minChargeDays,
         }))});
         if(res && res.reqNo) savedNos.push(res.reqNo);
         else hasError=true;
@@ -3316,6 +3413,7 @@ async function submitMonthlyRequest(){
       const rec={'OT-AIR Work Request No.':reqNo,'Date':nowStr(),'Type_OT-AIR':type,'Building':bld,'Space':unit,
         'Name':tenantInfo['Name']||row.tenant||'','Start time':st,'Finish time':et,
         'Start Date':sd,'Finish Date':ed,'Monthly_End_Date':ed,'Monthly_Total_Hours':hrsTotal,'Monthly_Total_Days':days,
+        'Monthly_MinCharge_Days':minChargeDays,
         'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remarkFull};
       gData.tenantReqs.push(rec);
       gData.buildingAssigns.push(rec);
@@ -3688,7 +3786,7 @@ function showCSDetail(reqNoOrIdx){
     }
   }
   const costDash = !hasActualArea;
-  const minChargeLabel = dayInfo ? `ขั้นต่ำ (฿${num(dayInfo.minChargePerDay)} × ${dayInfo.dayCount} วัน)` : 'ขั้นต่ำ';
+  const minChargeLabel = dayInfo ? `ขั้นต่ำ (฿${num(dayInfo.minChargePerDay)} × ${dayInfo.minChargeDayCount!=null?dayInfo.minChargeDayCount:dayInfo.dayCount} วัน)` : 'ขั้นต่ำ';
   const rateLabel = rateInfo && rateInfo.rateType==='hour' ? 'อัตรา (฿/ชม.)' : rateInfo && rateInfo.rateType==='area' ? 'อัตรา (฿/ตร.ม./ชม.)' : rateInfo && rateInfo.rateType==='month' ? 'อัตรา (คงที่/เดือน)' : '';
   const rateRow = rateInfo && rateInfo.rateType!=='none' ? `<div class="calc-row"><span>${rateLabel}</span><span style="font-size:11px;color:var(--text2)">${formatRateFormula(rateInfo)}</span></div>` : '';
   document.getElementById('detail-title').firstChild.textContent='🧾 รายละเอียดการคำนวณ ';
@@ -4546,13 +4644,18 @@ function calcBaseCharge(r, rc, hrs){
 }
 // คำนวณค่าใช้จ่าย OT รายวัน (ไม่ใช่ Monthly) — คำนวณในเว็บเองแทนการอ่านค่าจาก Sheet
 // เพื่อกันปัญหาสูตร/ค่าตายใน Sheet ผิดพลาดโดยไม่รู้ตัว
+// ถ้าแถวนี้ถูกระบุไว้ชัดเจนว่า Apply_Min_Charge = 'No' (มาจากโหมด "ขั้นต่ำครั้งแรก/กำหนดเอง" ตอนแยกคำขอรายวัน)
+// จะไม่คิดขั้นต่ำให้แถวนี้ แต่ยังคิด Area Charge ตามปกติ
 function calcDailyCharge(r, rc, hrs){
   const base = calcBaseCharge(r, rc, hrs);
-  return Object.assign({}, base, { total: base.minCharge + base.areaCharge });
+  const skipMin = String(r['Apply_Min_Charge']||'').toLowerCase()==='no';
+  const minCharge = skipMin ? 0 : base.minCharge;
+  return Object.assign({}, base, { minCharge, total: minCharge + base.areaCharge });
 }
 
 // คำนวณค่าใช้จ่าย Monthly — ใช้ Rate Code เดียวที่ Admin เลือกไว้ตรงๆ
-// ขั้นต่ำ/ค่าบริการ (ถ้ามี) คิดคูณด้วยจำนวนวันที่ขอใช้งานจริง (ไม่ใช่คิดครั้งเดียว)
+// ขั้นต่ำ/ค่าบริการ (ถ้ามี) คิดคูณด้วยจำนวนวันที่ต้องคิดขั้นต่ำจริง — ปกติ = จำนวนวันทั้งหมด
+// แต่ถ้าเลือกโหมด "ขั้นต่ำครั้งแรก" หรือ "กำหนดเอง" ตอนสร้างคำขอ จะใช้ Monthly_MinCharge_Days แทน (น้อยกว่าจำนวนวันทั้งหมดได้)
 function calcMonthlyCharge(r, rc, mHrs){
   const base = calcBaseCharge(r, rc, mHrs);
   const { areaCharge, minCharge } = base;
@@ -4564,8 +4667,10 @@ function calcMonthlyCharge(r, rc, mHrs){
       if(!isNaN(d1) && !isNaN(d2) && d2>=d1) dayCount = Math.round((d2-d1)/86400000)+1;
     }
   }
-  const minChargeTotal = (minCharge>0 && dayCount>0) ? minCharge*dayCount : minCharge;
-  return Object.assign({}, base, { areaCharge, minCharge: minChargeTotal, dayCount, minChargePerDay: minCharge });
+  // จำนวนวันที่ใช้คิดขั้นต่ำจริง — ใช้ Monthly_MinCharge_Days ถ้ามีระบุไว้ (โหมดครั้งแรก/กำหนดเอง) ไม่งั้น fallback เป็นจำนวนวันทั้งหมดเหมือนเดิม
+  const minChargeDayCount = (r['Monthly_MinCharge_Days']!=null && r['Monthly_MinCharge_Days']!=='') ? parseInt(r['Monthly_MinCharge_Days'])||0 : dayCount;
+  const minChargeTotal = (minCharge>0 && minChargeDayCount>0) ? minCharge*minChargeDayCount : minCharge;
+  return Object.assign({}, base, { areaCharge, minCharge: minChargeTotal, dayCount, minChargePerDay: minCharge, minChargeDayCount });
 }
 // สร้างข้อความสูตรคำนวณ Area Charge แบบที่ทวนสอบด้วยตาได้ทันที (อัตรา × พื้นที่/ชั่วโมง = ผลลัพธ์)
 function formatRateFormula(info){
@@ -4591,8 +4696,8 @@ function setF(btn,f){
   document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const base=filterByBuilding(gData.tenantReqs);
-  const filtered=f==='pending-t'?base.filter(r=>getStatus(r)==='pending'):
-    f==='approved-t'?base.filter(r=>getStatus(r)==='acknowledged'||getStatus(r)==='approved'):base;
+  const filtered=sortNewestFirst(f==='pending-t'?base.filter(r=>getStatus(r)==='pending'):
+    f==='approved-t'?base.filter(r=>getStatus(r)==='acknowledged'||getStatus(r)==='approved'):base);
   const wrap=document.getElementById('tenant-table-wrap');
   if(!filtered.length){wrap.innerHTML=emptyState('ไม่พบข้อมูล');return;}
   wrap.innerHTML=`<div class="table-wrap"><table>
