@@ -3057,7 +3057,7 @@ function fillTenantInfo(){
     nameEl.value=opt.dataset.name;
   } else if(opt && opt.value){
     const bld=v('nr-bld');
-    const t=(EXCEL_DATA.tenants||[]).find(x=>x['Building']===bld&&x['Space']===opt.value&&x['Name']);
+    const t=(dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants).find(x=>x['Building']===bld&&x['Space']===opt.value&&x['Name']);
     nameEl.value=t?t['Name']:'';
   } else {
     nameEl.value='';
@@ -3111,7 +3111,7 @@ function filterMonthlyUnitList(){
 
 function fillMonthlyTenantInfo(){
   const bld = v('nr-bld'), unit = v('nr-unit');
-  const t = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit);
+  const t = (dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants).find(t=>t['Building']===bld&&t['Space']===unit);
   const el = document.getElementById('nr-tenant-name');
   if(el) el.value = t ? (t['Name']||'') : '';
 }
@@ -3317,7 +3317,7 @@ async function submitMonthlyRequest(){
     const savedNos=[]; let hasError=false; let doneCount=0;
     for(const row of unitRows){
       const unit = row.unit;
-      const tenantInfo = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
+      const tenantInfo = (dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants).find(t=>t['Building']===bld&&t['Space']===unit)||{};
       for(const dateStr of dateList){
         const applyMin = minChargeDates.has(dateStr);
         const remarkFull = `[FROM-PATTERN ${patternLabel} | ${minModeLabel}]${remark?' '+remark:''}`;
@@ -3386,7 +3386,7 @@ async function submitMonthlyRequest(){
 
   for(const row of unitRows){
     const unit = row.unit;
-    const tenantInfo = (EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
+    const tenantInfo = (dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants).find(t=>t['Building']===bld&&t['Space']===unit)||{};
     if(USE_LIVE_API){
       try{
         const res = await apiGET({action:'submitRequest', data:encodeURIComponent(JSON.stringify({
@@ -3459,7 +3459,7 @@ function addUnitRow(){
   const wrap = document.getElementById('unit-rows-wrap');
   if(!wrap) return;
   const bld = document.getElementById('nr-bld')?.value || '';
-  const allTenants = EXCEL_DATA.tenants || dbData.tenants || [];
+  const allTenants = (dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants);
   const filteredUnits = bld
     ? allTenants.filter(u => u['Building']===bld && u['Space'] && u['Status']==='Current' && u['Name'])
     : [];
@@ -3510,7 +3510,7 @@ function renderUnitRows(){
   if(!wrap) return;
   const bld = document.getElementById('nr-bld')?.value || '';
   // ดึง units จาก EXCEL_DATA.tenants
-  const allTenants = EXCEL_DATA.tenants || dbData.tenants || [];
+  const allTenants = (dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants);
   const filteredUnits = bld
     ? allTenants.filter(u => u['Building']===bld && u['Space'] && u['Status']==='Current' && u['Name'])
     : [];
@@ -3578,7 +3578,7 @@ function filterUnitRowList(idx){
   const sel = document.getElementById(`ur-unit-${idx}`);
   if(!sel) return;
   const bld = document.getElementById('nr-bld')?.value || '';
-  const allTenants2 = EXCEL_DATA.tenants || dbData.tenants || [];
+  const allTenants2 = (dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants);
   const units = bld ? allTenants2.filter(u => u['Building']===bld && u['Space'] && u['Status']==='Current') : allTenants2;
   const filtered = q ? units.filter(u =>
     (u['Space']||'').toLowerCase().includes(q) ||
@@ -3600,7 +3600,7 @@ function fillUnitRowTenant(idx){
   if(!sel || !ten) return;
   const unit = sel.value;
   const bld = document.getElementById('nr-bld')?.value || '';
-  const allTenants3 = EXCEL_DATA.tenants || dbData.tenants || [];
+  const allTenants3 = (dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants);
   const found = allTenants3.find(u => u['Space']===unit && (!bld||u['Building']===bld));
   if(ten.tagName === 'INPUT'){
     ten.value = found ? `[${found['Space']||unit}] ${found['Name']||''}` : `[${unit}]`;
@@ -3651,7 +3651,7 @@ async function submitRequest(){
     const unit = row.unit;
     const start = row.start;
     const end = row.end;
-    const tenantInfo=(EXCEL_DATA.tenants||[]).find(t=>t['Building']===bld&&t['Space']===unit)||{};
+    const tenantInfo=(dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants).find(t=>t['Building']===bld&&t['Space']===unit)||{};
 
     if(USE_LIVE_API){
       try{
@@ -4405,7 +4405,7 @@ async function loadUnits(){
   if(searchEl) searchEl.value='';
 
   // ใช้ Tenants list อย่างเดียว
-  const units=(EXCEL_DATA.tenants||[]).filter(t=>
+  const units=(dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants).filter(t=>
     t['Building']===bld &&
     t['Space'] && t['Space'].trim()!=='' &&
     t['Status']==='Current' && t['Name'] && t['Name'].trim()!==''
