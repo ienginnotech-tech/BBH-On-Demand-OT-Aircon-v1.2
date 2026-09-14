@@ -1481,6 +1481,25 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
         <div class="fg"><label class="flabel">โทรศัพท์</label><input class="finput" type="tel" id="nr-tel" placeholder="0XX-XXX-XXXX"></div>
         <div class="fg full"><label class="flabel">หมายเหตุ</label><textarea class="ftextarea" id="nr-remark"></textarea></div>
       </div>
+      <!-- MINIMUM CHARGE MODE (รายวัน) — ใช้เมื่อขอหลาย Unit วันเดียวกัน แล้ว CLS ตกลงกับลูกค้าว่าคิดขั้นต่ำแค่ครั้งเดียว -->
+      <div class="fg full" style="margin:12px 0;padding:10px 12px;background:var(--surface2);border-radius:6px">
+        <label class="flabel">💰 โหมดคิดค่าขั้นต่ำ (เฉพาะ Rate Code ที่มีขั้นต่ำ) — ใช้กับกรณีขอหลาย Unit วันเดียวกัน</label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="radio" name="min-charge-mode-daily" value="every" checked onchange="onMinChargeModeDailyChange()"> ขั้นต่ำทุก Unit
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="radio" name="min-charge-mode-daily" value="first" onchange="onMinChargeModeDailyChange()"> ขั้นต่ำครั้งแรก (คิดแค่ Unit แรก)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text2)">
+            <input type="radio" name="min-charge-mode-daily" value="custom" onchange="onMinChargeModeDailyChange()"> กำหนดเอง (ติ๊กเลือก Unit เอง)
+          </label>
+        </div>
+        <div id="min-charge-custom-panel-daily" style="display:none;margin-top:10px;padding:10px;background:var(--surface);border-radius:6px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">ติ๊กเฉพาะ Unit ที่ต้องการให้คิดค่าขั้นต่ำ — Unit ที่ไม่ติ๊กจะยังคิด Area Charge ตามปกติ แค่ไม่บวกขั้นต่ำ</div>
+          <div id="min-charge-date-list-daily" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;max-height:180px;overflow-y:auto"></div>
+        </div>
+      </div>
       <div class="frow">
         <button class="btn btn-p" onclick="submitRequest()">📤 ส่งคำขอ</button>
         <button class="btn btn-o" onclick="closeMod('mod-new-req')">ยกเลิก</button>
@@ -3074,6 +3093,11 @@ function openNewReqModal(){
   closeDayPattern();
   const mdt = document.getElementById('mn-manual-datetime'); if(mdt) mdt.style.display = '';
   const sumBox = document.getElementById('mn-pattern-summary'); if(sumBox) sumBox.style.display = 'none';
+  // รีเซ็ตโหมดคิดค่าขั้นต่ำ (รายวัน) กลับเป็นค่าเริ่มต้น "ทุก Unit" ทุกครั้งที่เปิดฟอร์มใหม่
+  const everyRadio = document.querySelector('input[name="min-charge-mode-daily"][value="every"]');
+  if(everyRadio) everyRadio.checked = true;
+  const dailyCustomPanel = document.getElementById('min-charge-custom-panel-daily');
+  if(dailyCustomPanel) dailyCustomPanel.style.display = 'none';
 }
 
 function switchReqTab(tab){
@@ -3263,6 +3287,33 @@ function getMinChargeDates(allDates){
   return Array.from(document.querySelectorAll('#min-charge-date-list input:checked')).map(el=>el.dataset.date);
 }
 
+// ============================================================
+// MINIMUM CHARGE MODE (รายวัน) — เหมือนกับ Monthly แต่ตัวเลือกเป็น "Unit" แทน "วันที่"
+// ใช้กรณีขอหลาย Unit วันเดียวกัน แล้ว CLS ตกลงกับลูกค้าว่าคิดขั้นต่ำแค่ครั้งเดียว (ไม่ใช่ทุก Unit)
+// ============================================================
+function onMinChargeModeDailyChange(){
+  const mode = document.querySelector('input[name="min-charge-mode-daily"]:checked')?.value || 'every';
+  const panel = document.getElementById('min-charge-custom-panel-daily');
+  if(mode !== 'custom'){ panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  const rows = getUnitRowsData();
+  const listEl = document.getElementById('min-charge-date-list-daily');
+  if(!rows.length){
+    listEl.innerHTML = '<div style="font-size:11px;color:var(--text3);grid-column:1/-1">กรุณาเลือก Unit ก่อน</div>';
+    return;
+  }
+  listEl.innerHTML = rows.map(r=>`<label style="display:flex;align-items:center;gap:4px;font-size:10px;padding:4px 6px;background:var(--surface2);border-radius:4px;cursor:pointer">
+      <input type="checkbox" data-unit="${r.unit}" checked>${r.unit}
+    </label>`).join('');
+}
+// คืน Set ของ Unit ที่ควรคิดค่าขั้นต่ำ ตามโหมดที่เลือกไว้ (ใช้ตอน submit จริงในหน้ารายวัน)
+function getMinChargeUnitsDaily(unitRows){
+  const mode = document.querySelector('input[name="min-charge-mode-daily"]:checked')?.value || 'every';
+  if(mode === 'every') return new Set(unitRows.map(r=>r.unit));
+  if(mode === 'first') return new Set(unitRows.length ? [unitRows[0].unit] : []);
+  // custom
+  return new Set(Array.from(document.querySelectorAll('#min-charge-date-list-daily input:checked')).map(el=>el.dataset.unit));
+}
 
 function calcMonthlyHours(){
   const sd = document.getElementById('mn-start-date').value;
@@ -3644,6 +3695,9 @@ async function submitRequest(){
   const sb=document.querySelector('#mod-new-req .btn-p');
   if(sb){sb.disabled=true;sb.textContent='⏳ กำลังบันทึก...';}
 
+  // กำหนดว่า Unit ไหนควรคิดค่าขั้นต่ำบ้าง ตามโหมดที่เลือกไว้ (ทุก Unit / ครั้งแรก / กำหนดเอง)
+  const minChargeUnits = getMinChargeUnitsDaily(unitRows);
+
   const savedNos = [];
   let hasError = false;
 
@@ -3651,6 +3705,7 @@ async function submitRequest(){
     const unit = row.unit;
     const start = row.start;
     const end = row.end;
+    const applyMin = minChargeUnits.has(unit);
     const tenantInfo=(dbData.tenants&&dbData.tenants.length?dbData.tenants:EXCEL_DATA.tenants).find(t=>t['Building']===bld&&t['Space']===unit)||{};
 
     if(USE_LIVE_API){
@@ -3660,6 +3715,7 @@ async function submitRequest(){
           requester:name,tel,remark,
           tenantCode:tenantInfo['Code']||tenantInfo['Tenant_Code']||'',
           tenantName:tenantInfo['Name']||row.tenant||'',area:tenantInfo['Area']||'',
+          applyMinCharge: applyMin ? 'Yes' : 'No',
         }))});
         if(res && res.reqNo) savedNos.push(res.reqNo);
         else hasError=true;
@@ -3673,7 +3729,7 @@ async function submitRequest(){
       const reqNo=_prefix+String(_cnt+1).padStart(3,'0');
       const rec={'OT-AIR Work Request No.':reqNo,'Date':nowStr(),'Type_OT-AIR':type,'Building':bld,'Space':unit,
         'Name':tenantInfo['Name']||row.tenant||'','Start time':start,'Finish time':end,
-        'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remark};
+        'Name request':name,'Tel No.':tel,'Status':'Current','Remark':remark,'Apply_Min_Charge':applyMin?'Yes':'No'};
       gData.tenantReqs.push(rec);
       gData.buildingAssigns.push(rec);
       gData.engWork.push(rec);
