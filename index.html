@@ -918,7 +918,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
               </div>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0">
-              <input class="finput" id="tn-search" placeholder="🔍 ค้นหาเลขที่ / บริษัท / Space..." style="flex:1;min-width:180px" oninput="renderTenantTable()">
+              <input class="finput" id="tn-search" placeholder="🔍 ค้นหาเลขที่/บริษัท/Space/วันที่/เวลา..." style="flex:1;min-width:180px" oninput="renderTenantTable()">
               <select class="finput" id="tn-year" style="width:auto;min-width:80px" onchange="renderTenantTable()"><option value="">ทุกปี</option></select>
               <select class="finput" id="tn-month" style="width:auto;min-width:90px" onchange="renderTenantTable()"><option value="">ทุกเดือน</option></select>
               <select class="finput" id="tn-day" style="width:auto;min-width:80px" onchange="renderTenantTable()"><option value="">ทุกวัน</option></select>
@@ -954,7 +954,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
               </div>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0">
-              <input class="finput" id="cl-search" placeholder="🔍 ค้นหาเลขที่ / บริษัท / Space..." style="flex:1;min-width:180px" oninput="renderBuildingTable()">
+              <input class="finput" id="cl-search" placeholder="🔍 ค้นหาเลขที่/บริษัท/Space/วันที่/เวลา..." style="flex:1;min-width:180px" oninput="renderBuildingTable()">
               <select class="finput" id="cl-year" style="width:auto;min-width:80px" onchange="renderBuildingTable()"><option value="">ทุกปี</option></select>
               <select class="finput" id="cl-month" style="width:auto;min-width:90px" onchange="renderBuildingTable()"><option value="">ทุกเดือน</option></select>
               <select class="finput" id="cl-day" style="width:auto;min-width:80px" onchange="renderBuildingTable()"><option value="">ทุกวัน</option></select>
@@ -999,7 +999,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
               </div>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 0">
-              <input class="finput" id="en-search" placeholder="🔍 ค้นหาเลขที่ / บริษัท / Space..." style="flex:1;min-width:180px" oninput="renderEngTable()">
+              <input class="finput" id="en-search" placeholder="🔍 ค้นหาเลขที่/บริษัท/Space/วันที่/เวลา..." style="flex:1;min-width:180px" oninput="renderEngTable()">
               <select class="finput" id="en-year" style="width:auto;min-width:80px" onchange="renderEngTable()"><option value="">ทุกปี</option></select>
               <select class="finput" id="en-month" style="width:auto;min-width:90px" onchange="renderEngTable()"><option value="">ทุกเดือน</option></select>
               <select class="finput" id="en-day" style="width:auto;min-width:80px" onchange="renderEngTable()"><option value="">ทุกวัน</option></select>
@@ -2314,7 +2314,7 @@ function renderTenantTable(){
   let data = filterByBuilding(gData.tenantReqs);
   const wrap = document.getElementById('tenant-table-wrap'); if(!wrap) return;
   populateSearchDateDropdowns('tn', data, r=>r['Date']||r['Start Date']);
-  data = applySearchDateFilter(data, 'tn', r=>r['Date']||r['Start Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
+  data = applySearchDateFilter(data, 'tn', r=>r['Date']||r['Start Date'], r=>[r['OT-AIR Work Request No.'],r['Name'],r['Space'],r['Start Date'],r['Finish Date'],r['Start time'],r['Finish time']].filter(Boolean).join(' '));
   data = sortNewestFirst(data);
   if(!data.length){wrap.innerHTML=emptyState('ไม่พบข้อมูลที่ตรงกับเงื่อนไข');return;}
   const mBadge = '<span style="display:inline-block;margin-left:4px;padding:1px 5px;font-size:9px;font-weight:700;letter-spacing:.5px;border-radius:3px;background:rgba(0,180,255,.15);color:#00b4ff;border:1px solid rgba(0,180,255,.3);vertical-align:middle">📅 MONTHLY</span>';
@@ -2349,7 +2349,7 @@ function renderTenantTable(){
 function renderBuildingTable(){
   let data = filterByBuilding(gData.buildingAssigns);
   populateSearchDateDropdowns('cl', data, r=>r['Start Date']||r['Date']);
-  data = applySearchDateFilter(data, 'cl', r=>r['Start Date']||r['Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
+  data = applySearchDateFilter(data, 'cl', r=>r['Start Date']||r['Date'], r=>[r['OT-AIR Work Request No.'],r['Name'],r['Space'],r['Start Date'],r['Finish Date'],r['Start time'],r['Finish time']].filter(Boolean).join(' '));
   data = sortNewestFirst(data);
   renderBuildingRows(data, document.getElementById('building-table-wrap'));
 }
@@ -2425,7 +2425,7 @@ function setFB(btn,f){
 function renderEngTable(){
   let data = filterByBuilding(gData.engWork);
   populateSearchDateDropdowns('en', data, r=>r['Start Date']||r['Date']);
-  data = applySearchDateFilter(data, 'en', r=>r['Start Date']||r['Date'], r=>(r['OT-AIR Work Request No.']||'')+' '+(r['Name']||'')+' '+(r['Space']||''));
+  data = applySearchDateFilter(data, 'en', r=>r['Start Date']||r['Date'], r=>[r['OT-AIR Work Request No.'],r['Name'],r['Space'],r['Start Date'],r['Finish Date'],r['Start time'],r['Finish time']].filter(Boolean).join(' '));
   data = sortNewestFirst(data);
   renderEngRows(data, document.getElementById('eng-table-wrap'));
 }
