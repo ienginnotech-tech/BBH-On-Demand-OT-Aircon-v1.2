@@ -5014,6 +5014,7 @@ function generateYADI() {
       PERSON: tcode,
       OFFSET: 'UTLOVE',
       AMOUNT: amount.toFixed(2),
+      TAXAMOUNT1: yadiTax(amount, dates.postMonth),
       DATE: dates.invoiceDate, // DATE = วันที่ออกใบแจ้งหนี้ (วันที่ 5 คงที่ ของเดือนตาม TODATE)
       POSTMONTH: dates.postMonth,
       FROMDATE: dates.fromDate,
@@ -5059,6 +5060,16 @@ function generateYADI() {
   toast('✅ YARDI ' + rows.length + ' รายการ / ' + companies + ' บริษัท');
 }
 
+function yadiTax(amount, postMonth) {
+  // ใช้ตั้งแต่ POSTMONTH 01/10/2026 เป็นต้นไป (DD/MM/YYYY) ; ก่อนหน้านั้นเว้นว่าง
+  var m = String(postMonth||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return '';
+  var y = parseInt(m[3],10); if (y > 2400) y -= 543;
+  var key = y*10000 + parseInt(m[2],10)*100 + parseInt(m[1],10);
+  if (key < 20261001) return '';
+  return (amount*0.07).toFixed(2);
+}
+
 function renderYADITable(rows) {
   var wrap = document.getElementById('yadi-table-wrap');
   if (!rows.length) { wrap.innerHTML = emptyState('ไม่มีข้อมูล'); return; }
@@ -5069,6 +5080,7 @@ function renderYADITable(rows) {
       + '<td style="font-size:10px;color:var(--purple)">'+r.PERSON+'</td>'
       + '<td><span class="tag t-gray">'+r.OFFSET+'</span></td>'
       + '<td style="text-align:right;color:var(--accent)"><strong>'+Number(r.AMOUNT).toLocaleString()+'</strong></td>'
+      + '<td style="text-align:right">'+(r.TAXAMOUNT1!==''?Number(r.TAXAMOUNT1).toLocaleString(undefined,{minimumFractionDigits:2}):'')+'</td>'
       + '<td style="font-size:11px">'+r.DATE+'</td>'
       + '<td style="font-size:11px">'+r.POSTMONTH+'</td>'
       + '<td style="font-size:11px;color:var(--green)">'+r.FROMDATE+'</td>'
@@ -5079,7 +5091,7 @@ function renderYADITable(rows) {
   }).join('');
   wrap.innerHTML = '<div class="table-wrap"><table>'
     + '<thead><tr><th>#</th><th>PROPERTY</th><th>PERSON</th><th>OFFSET</th>'
-    + '<th>AMOUNT</th><th>DATE</th><th>POSTMONTH</th>'
+    + '<th>AMOUNT</th><th>TAXAMOUNT1</th><th>DATE</th><th>POSTMONTH</th>'
     + '<th>FROMDATE</th><th>TODATE</th><th>NOTES</th><th>DOC SEQ</th></tr></thead>'
     + '<tbody>' + trs + '</tbody></table></div>';
 }
@@ -5132,7 +5144,7 @@ function renderYADICompanies(rows) {
 
 function exportYADI_CSV() {
   if (!yadiData.length) { toast('กรุณาสร้างตารางก่อน'); return; }
-  var headers = ['TRANNUM','PROPERTY','PERSON','OFFSET','AMOUNT',
+  var headers = ['TRANNUM','PROPERTY','PERSON','OFFSET','AMOUNT','TAXAMOUNT1',
                  'DATE','POSTMONTH','FROMDATE','TODATE','NOTES','DOCUMENTSEQUENCENUMBER'];
   var dataRows = yadiData.map(function(r) {
     return headers.map(function(h){ return '"'+(r[h]||'')+'"'; }).join(',');
@@ -5152,7 +5164,7 @@ function exportYADI_CSV() {
 
 function exportYADI_Full() {
   if (!yadiData.length) { toast('กรุณาสร้างตารางก่อน'); return; }
-  var headers = ['TRANNUM','PROPERTY','PERSON','OFFSET','AMOUNT',
+  var headers = ['TRANNUM','PROPERTY','PERSON','OFFSET','AMOUNT','TAXAMOUNT1',
                  'DATE','POSTMONTH','FROMDATE','TODATE','NOTES',
                  'DOCUMENTSEQUENCENUMBER','Unit','Tenant','StartDate','StartTime','FinishTime','Area'];
   var rows2 = yadiData.map(function(r) {
