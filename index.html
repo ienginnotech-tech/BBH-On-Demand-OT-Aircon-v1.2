@@ -851,6 +851,36 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
   .page.pin>.pin-fill{display:block;min-height:0;overflow:visible}
   .page.pin>.pin-fill>.pin-scroll{overflow:auto;max-height:70vh}
 }
+
+/* CLS page: Rate Code ล็อกหัวข้อ เหลือ ~4 บรรทัด ให้ตารางคำขอ OT ได้พื้นที่ 7-8 บรรทัด */
+.page.pin>.pin-fixed{flex:0 0 auto;display:flex;flex-direction:column;overflow:hidden;margin-bottom:0}
+.page.pin>.pin-fixed>*{flex-shrink:0}
+.page.pin>.pin-fixed>.pin-scroll{height:192px;overflow:auto}
+.page.pin-compact{padding-bottom:12px;padding-top:16px}
+.page.pin>.pin-fixed:hover{transform:none !important}
+.page.pin-compact>.stats-grid{margin-bottom:10px}
+.page.pin-compact .stat-card{padding:9px 16px}
+.page.pin-compact .stat-num{font-size:24px}
+.page.pin-compact>.pin-fill{min-height:280px;margin-bottom:10px}
+.page.pin-compact>.sh{margin-bottom:8px}
+@media(max-width:768px){.page.pin>.pin-fixed{display:block}.page.pin>.pin-fixed>.pin-scroll{height:auto;max-height:50vh}}
+
+/* YARDI: บีบส่วนหัวให้แน่น ตารางได้พื้นที่มากขึ้น */
+#page-yadi>.sh{margin-bottom:6px}
+#page-yadi>.card{margin-bottom:8px}
+#page-yadi>.card>.card-body{padding:8px 14px}
+#page-yadi .form-grid{gap:8px}
+#page-yadi .fg{margin-bottom:0}
+#page-yadi>.card>.card-body>div[style*="dashed"]{margin-top:8px !important;padding-top:8px !important}
+#page-yadi>.card>.card-body>div[style*="dashed"]>div:first-child{margin-bottom:4px !important}
+#page-yadi #yadi-export-bar{margin-bottom:8px !important}
+#page-yadi>.pin-fill{min-height:240px}
+#page-yadi .pin-fill .card-header{padding:7px 16px}
+
+#yadi-scroll .card{overflow:visible}
+#yadi-scroll #yadi-result-card .card-header{position:static}
+#yadi-companies-wrap thead th{position:static !important;box-shadow:none}
+#yadi-scroll #yadi-table-wrap thead th{top:0}
 </style>
 </head>
 <body data-theme="navy">
@@ -1074,7 +1104,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
         </div>
 
         <!-- PAGE: CLS -->
-        <div class="page pin" id="page-building">
+        <div class="page pin pin-compact" id="page-building">
           <div class="sh">
             <div>
               <div class="sh-title">🏗️ CLS Assign งาน</div>
@@ -1107,7 +1137,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
             </div>
             <div id="building-table-wrap" class="pin-scroll"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
-          <div class="card">
+          <div class="card pin-fixed">
             <div class="card-header"><div class="card-title"><div class="card-title-icon">💰</div>Rate Code Reference</div>
               <div style="display:flex;gap:6px">
                 <select class="finput" style="width:auto;padding:5px 10px;font-size:11px" id="rate-bld" onchange="filterRates()">
@@ -1115,7 +1145,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
                 </select>
               </div>
             </div>
-            <div id="rate-table-wrap"><div class="loading"><span class="spinner"></span>โหลด Rate Codes...</div></div>
+            <div id="rate-table-wrap" class="pin-scroll"><div class="loading"><span class="spinner"></span>โหลด Rate Codes...</div></div>
           </div>
         </div>
 
@@ -1475,7 +1505,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
 
 
         <!-- PAGE: SENT TO YARDI -->
-        <div class="page pin" id="page-yadi">
+        <div class="page pin pin-compact" id="page-yadi">
           <div class="sh">
             <div>
               <div class="sh-title">📤 Sent to YARDI</div>
@@ -1552,7 +1582,8 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
           </div>
 
           <!-- YARDI Table -->
-          <div class="card pin-fill" id="yadi-result-card" style="display:none">
+          <div id="yadi-scroll" class="pin-fill pin-scroll">
+          <div class="card" id="yadi-result-card" style="display:none">
             <div class="card-header">
               <div class="card-title"><div class="card-title-icon">📋</div>
                 ตาราง Sent to YARDI — <span id="yadi-period-label"></span>
@@ -1561,11 +1592,12 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
                 <button class="btn btn-o btn-sm" onclick="window.print()">🖨</button>
               </div>
             </div>
-            <div id="yadi-table-wrap" class="pin-scroll"></div>
+            <div id="yadi-table-wrap"></div>
           </div>
 
           <!-- Per-company breakdown -->
           <div id="yadi-companies-wrap"></div>
+          </div><!-- /yadi-scroll -->
         </div>
 
       </div><!-- /pages -->
