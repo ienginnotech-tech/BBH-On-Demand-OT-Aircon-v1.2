@@ -834,6 +834,23 @@ body[data-theme="light"] .t-purple{background:#efeafb;color:#6d4fc2;border-color
 body[data-theme="light"] input,body[data-theme="light"] select,body[data-theme="light"] textarea,body[data-theme="light"] .finput{background:#fff;color:#1b2733;border:1px solid #c5d0dd}
 body[data-theme="light"] .theme-card{background:#fff}
 body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,body[data-theme="light"] .theme-card:hover{box-shadow:0 12px 26px rgba(20,40,70,.16)}
+
+/* ===== PINNED HEADERS: หัวข้อค้างบนจอ เลื่อนเฉพาะตาราง ===== */
+.page.pin.active{display:flex;flex-direction:column;height:calc(100vh - 52px);overflow-y:auto}
+.page.pin>*{flex-shrink:0}
+.page.pin>.pin-fill{flex:1 1 0;min-height:320px;display:flex;flex-direction:column;overflow:hidden;margin-bottom:0}
+.page.pin>.pin-fill>*{flex-shrink:0}
+.page.pin>.pin-fill>.pin-scroll{flex:1 1 0;min-height:0;overflow:auto}
+.page.pin>.pin-scroll.pin-fill{display:block;overflow:auto}
+.pin-scroll .table-wrap{overflow:visible}
+.pin-scroll thead th{position:sticky;top:0;z-index:3;background:var(--surface2,#1c1c23);box-shadow:0 1px 0 var(--border2)}
+.pin-fill:hover{transform:none !important}
+.pin-scroll{scrollbar-width:thin}
+@media(max-width:768px){
+  .page.pin.active{display:block;height:auto;overflow:visible}
+  .page.pin>.pin-fill{display:block;min-height:0;overflow:visible}
+  .page.pin>.pin-fill>.pin-scroll{overflow:auto;max-height:70vh}
+}
 </style>
 </head>
 <body data-theme="navy">
@@ -995,7 +1012,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
       <div id="pages">
 
         <!-- PAGE: MONITORING (Admin only) -->
-        <div class="page" id="page-monitor">
+        <div class="page pin" id="page-monitor">
           <div class="sh">
             <div><div class="sh-title">📈 Monitoring Dashboard</div>
             <div class="sh-sub">ภาพรวมและเปรียบเทียบรายเดือน — Admin เห็นทุกอาคาร / CLS เห็นเฉพาะอาคารตัวเอง</div></div>
@@ -1019,11 +1036,11 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
             <input class="finput" type="date" id="mo-range-to" style="width:auto" onchange="renderMonitoring()">
             <button class="btn btn-o btn-sm" onclick="document.getElementById('mo-range-from').value='';document.getElementById('mo-range-to').value='';renderMonitoring()">✕ ล้างช่วงวันที่</button>
           </div>
-          <div id="monitor-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
+          <div id="monitor-wrap" class="pin-fill pin-scroll"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
         </div>
 
         <!-- PAGE: TENANT -->
-        <div class="page" id="page-tenant">
+        <div class="page pin" id="page-tenant">
           <div class="sh">
             <div>
               <div class="sh-title">🏢 แจ้งขอใช้ OT Air</div>
@@ -1037,7 +1054,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
             <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="ts-approved">—</div><div class="stat-label">รับทราบแล้ว</div><div class="stat-sub">Acknowledged</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--text)" id="ts-hours">—</div><div class="stat-label">ชั่วโมงรวม</div><div class="stat-sub">เดือนนี้</div></div>
           </div>
-          <div class="card">
+          <div class="card pin-fill">
             <div class="card-header">
               <div class="card-title"><div class="card-title-icon">📋</div>ประวัติคำขอ OT Air</div>
               <div class="filter-bar" style="margin:0;padding:0">
@@ -1052,12 +1069,12 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
               <select class="finput" id="tn-month" style="width:auto;min-width:90px" onchange="renderTenantTable()"><option value="">ทุกเดือน</option></select>
               <select class="finput" id="tn-day" style="width:auto;min-width:80px" onchange="renderTenantTable()"><option value="">ทุกวัน</option></select>
             </div>
-            <div id="tenant-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
+            <div id="tenant-table-wrap" class="pin-scroll"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
         </div>
 
         <!-- PAGE: CLS -->
-        <div class="page" id="page-building">
+        <div class="page pin" id="page-building">
           <div class="sh">
             <div>
               <div class="sh-title">🏗️ CLS Assign งาน</div>
@@ -1071,7 +1088,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
             <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="bs-ok">—</div><div class="stat-label">มอบหมายช่างแล้ว</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--accent)" id="bs-total">—</div><div class="stat-label">ทั้งหมด</div></div>
           </div>
-          <div class="card">
+          <div class="card pin-fill">
             <div class="card-header">
               <div class="card-title"><div class="card-title-icon">📥</div>คำขอ OT ทั้งหมด</div>
               <div class="filter-bar" style="margin:0;padding:0">
@@ -1088,7 +1105,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
               <select class="finput" id="cl-month" style="width:auto;min-width:90px" onchange="renderBuildingTable()"><option value="">ทุกเดือน</option></select>
               <select class="finput" id="cl-day" style="width:auto;min-width:80px" onchange="renderBuildingTable()"><option value="">ทุกวัน</option></select>
             </div>
-            <div id="building-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
+            <div id="building-table-wrap" class="pin-scroll"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
           <div class="card">
             <div class="card-header"><div class="card-title"><div class="card-title-icon">💰</div>Rate Code Reference</div>
@@ -1105,7 +1122,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
 <!-- Manager page removed -->
 
         <!-- PAGE: ENGINEERING -->
-        <div class="page" id="page-eng">
+        <div class="page pin" id="page-eng">
           <div class="sh">
             <div><div class="sh-title">🔧 งาน OT ที่ได้รับมอบหมาย</div>
             <div class="sh-sub">บันทึกเปิด/ปิด ระบบ Aircon</div></div>
@@ -1116,7 +1133,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
             <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="es-done">—</div><div class="stat-label">ปิดแล้ว</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--purple)" id="es-total">—</div><div class="stat-label">ทั้งหมด</div></div>
           </div>
-          <div class="card">
+          <div class="card pin-fill">
             <div class="card-header">
               <div class="card-title"><div class="card-title-icon">🛠</div>งาน OT Engineering</div>
               <div class="filter-bar" style="margin:0;padding:0">
@@ -1133,12 +1150,12 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
               <select class="finput" id="en-month" style="width:auto;min-width:90px" onchange="renderEngTable()"><option value="">ทุกเดือน</option></select>
               <select class="finput" id="en-day" style="width:auto;min-width:80px" onchange="renderEngTable()"><option value="">ทุกวัน</option></select>
             </div>
-            <div id="eng-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
+            <div id="eng-table-wrap" class="pin-scroll"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
         </div>
 
         <!-- PAGE: CS REPORT -->
-        <div class="page" id="page-cs">
+        <div class="page pin" id="page-cs">
           <div class="sh">
             <div><div class="sh-title">📊 CS Summarize Report</div>
             <div class="sh-sub">สรุปรายงาน OT Aircon — ทุกอาคาร &nbsp;<span id="cs-refresh-indicator" style="font-size:10px;color:var(--text3);font-weight:400"></span></div></div>
@@ -1154,7 +1171,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
             <div class="stat-card"><div class="stat-num" style="color:var(--purple)" id="cs-cost">—</div><div class="stat-label">มูลค่ารวม</div></div>
             <div class="stat-card"><div class="stat-num" style="color:var(--text)">3</div><div class="stat-label">Buildings</div></div>
           </div>
-          <div class="card">
+          <div class="card pin-fill">
             <div class="card-header">
               <div class="card-title"><div class="card-title-icon">📄</div>รายงานสรุป OT Air</div>
               <div class="filter-bar" style="margin:0;padding:0">
@@ -1170,7 +1187,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
               <select class="finput" id="cr-month" style="width:auto;min-width:90px" onchange="renderCSTable()"><option value="">ทุกเดือน</option></select>
               <select class="finput" id="cr-day" style="width:auto;min-width:80px" onchange="renderCSTable()"><option value="">ทุกวัน</option></select>
             </div>
-            <div id="cs-table-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
+            <div id="cs-table-wrap" class="pin-scroll"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
           </div>
         </div>
 
@@ -1244,7 +1261,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
         </div>
 
         <!-- PAGE: USER MANAGEMENT -->
-        <div class="page" id="page-users">
+        <div class="page pin" id="page-users">
           <div class="sh">
             <div><div class="sh-title">👥 จัดการผู้ใช้งาน</div>
             <div class="sh-sub">อนุมัติ / แก้ไข / ลบ ผู้ใช้งาน — แยกตามอาคาร</div></div>
@@ -1268,9 +1285,9 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
               <div id="users-pending-wrap"><div class="loading"><span class="spinner"></span>กำลังโหลด...</div></div>
             </div>
           </div>
-          <div class="card">
+          <div class="card pin-fill">
             <div class="card-header"><div class="card-title"><div class="card-title-icon">✅</div>ผู้ใช้งาน Active</div></div>
-            <div class="card-body">
+            <div class="card-body pin-scroll">
               <div id="users-active-wrap"><div class="loading"><span class="spinner"></span></div></div>
             </div>
           </div>
@@ -1458,7 +1475,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
 
 
         <!-- PAGE: SENT TO YARDI -->
-        <div class="page" id="page-yadi">
+        <div class="page pin" id="page-yadi">
           <div class="sh">
             <div>
               <div class="sh-title">📤 Sent to YARDI</div>
@@ -1535,7 +1552,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
           </div>
 
           <!-- YARDI Table -->
-          <div class="card" id="yadi-result-card" style="display:none">
+          <div class="card pin-fill" id="yadi-result-card" style="display:none">
             <div class="card-header">
               <div class="card-title"><div class="card-title-icon">📋</div>
                 ตาราง Sent to YARDI — <span id="yadi-period-label"></span>
@@ -1544,7 +1561,7 @@ body[data-theme="light"] .stat-card:hover,body[data-theme="light"] .card:hover,b
                 <button class="btn btn-o btn-sm" onclick="window.print()">🖨</button>
               </div>
             </div>
-            <div id="yadi-table-wrap"></div>
+            <div id="yadi-table-wrap" class="pin-scroll"></div>
           </div>
 
           <!-- Per-company breakdown -->
