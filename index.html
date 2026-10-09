@@ -710,17 +710,17 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
 /* ===== BACKGROUND PICKER (data-bg) + LIVELY EFFECTS ===== */
 body[data-bg="dark"]{
   --bg:#0b0b0e;--sidebar:#101015;--sidebar2:#16161b;--surface:#16161b;--surface2:#1d1d24;--card:#16161b;
-  --card-bg:rgba(14,14,19,.82);--bg-glow1:rgba(255,140,0,.16);--bg-glow2:rgba(0,200,150,.10);
+  --card-bg:rgba(14,14,19,.78);--bg-glow1:rgba(255,140,0,.42);--bg-glow2:rgba(0,200,150,.20);
 }
 body[data-bg="gray"]{
   --bg:#2a2b30;--sidebar:#232428;--sidebar2:#2f3035;--surface:#34353b;--surface2:#3d3e45;--card:#34353b;
-  --card-bg:rgba(52,53,59,.88);--border:rgba(160,160,180,.22);--border2:rgba(160,160,180,.38);
-  --text:#ececf0;--text2:#b4b4bf;--text3:#7a7a86;--bg-glow1:rgba(0,200,150,.16);--bg-glow2:rgba(180,180,210,.14);
+  --card-bg:rgba(52,53,59,.80);--border:rgba(160,160,180,.22);--border2:rgba(160,160,180,.38);
+  --text:#ececf0;--text2:#b4b4bf;--text3:#7a7a86;--bg-glow1:rgba(255,140,0,.38);--bg-glow2:rgba(0,200,150,.22);
 }
 body[data-bg="blue"]{
-  --bg:#0b1e45;--sidebar:#0a1836;--sidebar2:#10265a;--surface:#13306b;--surface2:#193b82;--card:#13306b;
-  --card-bg:rgba(16,44,98,.86);--border:rgba(96,165,250,.26);--border2:rgba(96,165,250,.42);
-  --text:#e8f0ff;--text2:#a9c6ff;--text3:#5f7fb8;--bg-glow1:rgba(59,130,246,.30);--bg-glow2:rgba(34,211,238,.16);
+  --bg:#15395e;--sidebar:#0f2a48;--sidebar2:#173f6a;--surface:#1d4b7c;--surface2:#245a92;--card:#1d4b7c;
+  --card-bg:rgba(29,75,124,.80);--border:rgba(125,200,255,.26);--border2:rgba(125,200,255,.42);
+  --text:#eaf5ff;--text2:#b5dcff;--text3:#6f9cc6;--bg-glow1:rgba(56,189,248,.22);--bg-glow2:rgba(255,140,0,.28);
 }
 body[data-bg] .card,body[data-bg] .stat-card{background:var(--card-bg)}
 body[data-bg] .topbar{background:var(--sidebar)}
@@ -729,8 +729,8 @@ body[data-bg] th{background:var(--surface2)}
 body::before{
   content:'';position:fixed;inset:-20%;z-index:-1;pointer-events:none;
   background:
-    radial-gradient(40% 35% at 20% 25%,var(--bg-glow1,rgba(255,140,0,.12)),transparent 70%),
-    radial-gradient(35% 40% at 80% 70%,var(--bg-glow2,rgba(0,200,150,.08)),transparent 70%);
+    radial-gradient(55% 45% at 20% 22%,var(--bg-glow1,rgba(255,140,0,.34)),transparent 72%),
+    radial-gradient(45% 50% at 80% 70%,var(--bg-glow2,rgba(0,200,150,.18)),transparent 72%);
   animation:auroraMove 18s ease-in-out infinite alternate;
 }
 @keyframes auroraMove{
@@ -1260,7 +1260,7 @@ tbody tr:hover td{background:var(--accent-glow)}
                         <div class="theme-name">Gray</div><div class="theme-desc">พื้นเทา</div>
                       </div>
                       <div class="theme-card bg-card" id="bg-blue" onclick="setBg('blue')">
-                        <div class="bg-preview" style="background:linear-gradient(135deg,#0b1e45,#13306b 60%,#2563eb)"></div>
+                        <div class="bg-preview" style="background:linear-gradient(135deg,#15395e,#1d4b7c 55%,#38bdf8)"></div>
                         <div class="theme-name">Blue</div><div class="theme-desc">พื้นน้ำเงิน</div>
                       </div>
                     </div>
