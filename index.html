@@ -706,6 +706,66 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
   .irow{grid-template-columns:1fr}
   .hamburger-label{display:none}
 }
+
+/* ===== BACKGROUND PICKER (data-bg) + LIVELY EFFECTS ===== */
+body[data-bg="dark"]{
+  --bg:#0b0b0e;--sidebar:#101015;--sidebar2:#16161b;--surface:#16161b;--surface2:#1d1d24;--card:#16161b;
+  --card-bg:rgba(14,14,19,.82);--bg-glow1:rgba(255,140,0,.16);--bg-glow2:rgba(0,200,150,.10);
+}
+body[data-bg="gray"]{
+  --bg:#2a2b30;--sidebar:#232428;--sidebar2:#2f3035;--surface:#34353b;--surface2:#3d3e45;--card:#34353b;
+  --card-bg:rgba(52,53,59,.88);--border:rgba(160,160,180,.22);--border2:rgba(160,160,180,.38);
+  --text:#ececf0;--text2:#b4b4bf;--text3:#7a7a86;--bg-glow1:rgba(0,200,150,.16);--bg-glow2:rgba(180,180,210,.14);
+}
+body[data-bg="blue"]{
+  --bg:#0b1e45;--sidebar:#0a1836;--sidebar2:#10265a;--surface:#13306b;--surface2:#193b82;--card:#13306b;
+  --card-bg:rgba(16,44,98,.86);--border:rgba(96,165,250,.26);--border2:rgba(96,165,250,.42);
+  --text:#e8f0ff;--text2:#a9c6ff;--text3:#5f7fb8;--bg-glow1:rgba(59,130,246,.30);--bg-glow2:rgba(34,211,238,.16);
+}
+body[data-bg] .card,body[data-bg] .stat-card{background:var(--card-bg)}
+body[data-bg] .topbar{background:var(--sidebar)}
+body[data-bg] th{background:var(--surface2)}
+/* animated aurora layer behind everything */
+body::before{
+  content:'';position:fixed;inset:-20%;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(40% 35% at 20% 25%,var(--bg-glow1,rgba(255,140,0,.12)),transparent 70%),
+    radial-gradient(35% 40% at 80% 70%,var(--bg-glow2,rgba(0,200,150,.08)),transparent 70%);
+  animation:auroraMove 18s ease-in-out infinite alternate;
+}
+@keyframes auroraMove{
+  0%{transform:translate3d(-3%,-2%,0) scale(1)}
+  50%{transform:translate3d(4%,3%,0) scale(1.08)}
+  100%{transform:translate3d(-2%,5%,0) scale(1.03)}
+}
+body{background-attachment:fixed}
+/* hover: boxes pop up */
+.stat-card,.card,.theme-card,.bg-card,.user-row,.settings-nav-item,.nav-item,.btn{
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s ease,border-color .2s,background .2s,filter .2s;
+}
+.stat-card:hover{transform:translateY(-5px) scale(1.03);box-shadow:0 12px 28px rgba(0,0,0,.45),0 0 22px var(--accent-glow);border-color:var(--accent)}
+.card:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(0,0,0,.45),0 0 0 1px var(--border2)}
+.theme-card:hover,.bg-card:hover{transform:translateY(-6px) scale(1.05);box-shadow:0 14px 28px rgba(0,0,0,.5),0 0 22px var(--accent-glow);border-color:var(--accent)}
+.btn:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+.btn:active{transform:scale(.96)}
+.nav-item:hover{transform:translateX(5px) scale(1.03)}
+.settings-nav-item:hover{transform:translateX(4px)}
+.user-row:hover{transform:translateY(-3px) scale(1.01);box-shadow:0 10px 24px rgba(0,0,0,.4)}
+tbody tr{transition:transform .18s ease,box-shadow .18s ease}
+tbody tr:hover{transform:scale(1.008);box-shadow:0 6px 18px rgba(0,0,0,.4);position:relative;z-index:2}
+tbody tr:hover td{background:var(--accent-glow)}
+.page{animation:pageIn .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.stats-grid .stat-card{animation:popIn .5s cubic-bezier(.34,1.56,.64,1) backwards}
+.stats-grid .stat-card:nth-child(2){animation-delay:.07s}
+.stats-grid .stat-card:nth-child(3){animation-delay:.14s}
+.stats-grid .stat-card:nth-child(4){animation-delay:.21s}
+@keyframes popIn{from{opacity:0;transform:scale(.85) translateY(10px)}to{opacity:1;transform:none}}
+.bg-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow),0 0 24px var(--accent-glow)}
+.bg-preview{width:100%;height:56px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,.12);position:relative;overflow:hidden}
+.bg-preview::after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.18) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s}
+.bg-card:hover .bg-preview::after{transform:translateX(120%)}
+@media (prefers-reduced-motion:reduce){body::before,.page,.stat-card{animation:none!important}.stat-card:hover,.card:hover,.theme-card:hover,.bg-card:hover,.btn:hover,tbody tr:hover{transform:none}}
 </style>
 </head>
 <body data-theme="navy">
@@ -1184,6 +1244,25 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
                       <div style="font-size:18px;margin-bottom:2px">🌊</div>
                       <div class="theme-name">Deep Blue</div>
                       <div class="theme-desc">พื้นน้ำเงินเข้ม</div>
+                    </div>
+                  </div>
+                  <!-- BACKGROUND -->
+                  <div style="margin-top:22px">
+                    <div style="font-size:13px;font-weight:700;margin-bottom:4px">🖼️ พื้นหลัง / Background</div>
+                    <div style="font-size:11px;color:var(--text2);margin-bottom:4px">เลือกสีพื้นหลังได้ 3 แบบ (ใช้ร่วมกับ Theme ด้านบน)</div>
+                    <div class="theme-grid">
+                      <div class="theme-card bg-card" id="bg-dark" onclick="setBg('dark')">
+                        <div class="bg-preview" style="background:linear-gradient(135deg,#0b0b0e,#1d1d24 60%,#2a2316)"></div>
+                        <div class="theme-name">Dark</div><div class="theme-desc">พื้นดำ</div>
+                      </div>
+                      <div class="theme-card bg-card" id="bg-gray" onclick="setBg('gray')">
+                        <div class="bg-preview" style="background:linear-gradient(135deg,#2a2b30,#3d3e45 60%,#4a4b53)"></div>
+                        <div class="theme-name">Gray</div><div class="theme-desc">พื้นเทา</div>
+                      </div>
+                      <div class="theme-card bg-card" id="bg-blue" onclick="setBg('blue')">
+                        <div class="bg-preview" style="background:linear-gradient(135deg,#0b1e45,#13306b 60%,#2563eb)"></div>
+                        <div class="theme-name">Blue</div><div class="theme-desc">พื้นน้ำเงิน</div>
+                      </div>
                     </div>
                   </div>
                   <div style="margin-top:20px">
@@ -4279,10 +4358,19 @@ function switchSettings(id,el){
 function setTheme(theme){
   document.body.setAttribute('data-theme',theme);
   localStorage.setItem('dbh_theme',theme);
-  document.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.theme-card:not(.bg-card):not([id^="fc-"])').forEach(c=>c.classList.remove('selected'));
   document.getElementById('tc-'+theme)?.classList.add('selected');
   const names={navy:'🌙 Dark',gray:'☁️ Gray',deepblue:'🌊 Deep Blue'};
   toast('🎨 Theme: '+(names[theme]||theme));
+}
+
+function setBg(bg){
+  document.body.setAttribute('data-bg',bg);
+  try{localStorage.setItem('dbh_bg',bg);}catch(e){}
+  document.querySelectorAll('.bg-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('bg-'+bg)?.classList.add('selected');
+  const names={dark:'⬛ Dark',gray:'☁️ Gray',blue:'🟦 Blue'};
+  toast('🖼️ พื้นหลัง: '+(names[bg]||bg));
 }
 
 function setFont(font){
@@ -4798,6 +4886,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.body.setAttribute('data-theme',savedTheme);
   document.getElementById('tc-'+savedTheme)?.classList.add('selected');
   applySavedFont();
+  try{const sb=localStorage.getItem('dbh_bg'); if(sb){document.body.setAttribute('data-bg',sb);document.getElementById('bg-'+sb)?.classList.add('selected');}}catch(e){}
   // Enter key on login
   document.getElementById('login-pass').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
   loadApiUrl();
