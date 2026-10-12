@@ -530,7 +530,7 @@ tbody tr:hover td{background:rgba(0,210,180,.04)}
   box-shadow:0 0 0 2px rgba(0,210,180,.08);background:rgba(0,30,24,.6);
 }
 .finput::placeholder{color:rgba(0,210,180,.2)}
-.fselect option{background:#07090d}
+.fselect option,select option{background:var(--surface,#16161b);color:var(--text,#f0ede8)}
 .ftextarea{resize:vertical;min-height:70px}
 .frow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
 
@@ -905,6 +905,20 @@ body[data-theme="light"] .db-pager button{color:#1f5280;border-color:#9fb2c6;bac
 .db-pager .btn{font-size:12px;padding:6px 14px}
 .db-pager .btn[disabled]{opacity:.35;pointer-events:none}
 .db-pager strong{color:var(--accent)}
+
+/* Light: แก้ตัวอักษรจาง/สีสว่างที่ฝังในหน้าและตารางทุก module */
+body[data-theme="light"]{--text3:#667788}
+body[data-theme="light"] [style*="#00b4ff"],body[data-theme="light"] [style*="#00ffcc"],body[data-theme="light"] [style*="#00d4b4"],body[data-theme="light"] [style*="#00d4ff"],body[data-theme="light"] [style*="var(--cyan)"]{color:#1f5280 !important}
+body[data-theme="light"] [style*="color:#f59e0b"],body[data-theme="light"] [style*="color:#ff8c00"],body[data-theme="light"] [style*="color:var(--orange)"]{color:#b45309 !important}
+body[data-theme="light"] [style*="color:#22c55e"],body[data-theme="light"] [style*="color:#00c853"]{color:#15803d !important}
+body[data-theme="light"] [style*="color:#f472b6"]{color:#be185d !important}
+body[data-theme="light"] [style*="color:#93c5fd"],body[data-theme="light"] [style*="color:#90b8ff"],body[data-theme="light"] [style*="color:#b8d0ff"]{color:#1f4a75 !important}
+body[data-theme="light"] [style*="background:#00c853"]{background:#15803d !important;border-color:#15803d !important;color:#fff !important}
+body[data-theme="light"] .rate-desc,body[data-theme="light"] #as-code option{color:#1b2733}
+body[data-theme="light"] select option:checked{background:#cfe0f2;color:#14202c}
+body[data-theme="light"] select[size]{background:#fff;color:#1b2733}
+body[data-theme="light"] .auth-footer{color:rgba(255,255,255,.55)}
+body[data-theme="light"] .auth-divider{color:rgba(255,255,255,.5)}
 </style>
 </head>
 <body data-theme="navy">
