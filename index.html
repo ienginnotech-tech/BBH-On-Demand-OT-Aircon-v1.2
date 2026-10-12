@@ -1320,7 +1320,7 @@ body[data-theme="light"] .auth-divider{color:rgba(255,255,255,.5)}
                   <select class="finput" style="width:auto" id="ten-filter-bld" onchange="filterTenantDB()">
                     <option value="">ทุก Building</option><option>BTE</option><option>BTB</option><option>UBCII</option>
                   </select>
-                  <button class="btn btn-p btn-sm" onclick="openMod('mod-add-tenant')">＋ เพิ่ม</button>
+                  <button class="btn btn-p btn-sm" onclick="window._tnOrig=null;openMod('mod-add-tenant')">＋ เพิ่ม</button>
                 </div>
                 <div id="tenant-db-wrap"><div class="loading"><span class="spinner"></span></div></div>
               </div>
@@ -1542,6 +1542,29 @@ body[data-theme="light"] .auth-divider{color:rgba(255,255,255,.5)}
                   <button class="btn btn-p" id="backup-btn" onclick="backupAllData()">⬇ Backup ข้อมูลทั้งหมด (Excel)</button>
                   <div id="backup-status" style="margin-top:14px;font-size:12px;line-height:1.8"></div>
                   <div id="backup-last" style="margin-top:6px;font-size:11px;color:var(--text2)"></div>
+
+                  <hr style="border:none;border-top:1px solid var(--border);margin:22px 0">
+                  <div style="font-size:13px;font-weight:700;margin-bottom:4px">☁️ Backup ลง Google Drive</div>
+                  <div style="font-size:11px;color:var(--text2);margin-bottom:12px">สร้างสำเนาทั้ง Google Sheet ไว้ในโฟลเดอร์ <strong>BBH_OT_Aircon_Backups</strong> ใน Drive ของเจ้าของ Sheet (เก็บล่าสุด 30 ชุด) — ตั้งให้ทำเองทุกคืนได้ที่ Apps Script (<code>setupNightlyBackup</code>)</div>
+                  <button class="btn btn-p" id="drive-bk-btn" onclick="backupToDriveNow()">☁️ Backup ลง Drive ตอนนี้</button>
+                  <button class="btn btn-o" onclick="listDriveBackups()">📂 ดูรายการล่าสุด</button>
+                  <div id="drive-bk-status" style="margin-top:12px;font-size:12px;line-height:1.8"></div>
+
+                  <hr style="border:none;border-top:1px solid var(--border);margin:22px 0">
+                  <div style="font-size:13px;font-weight:700;margin-bottom:4px">♻️ กู้คืนจากไฟล์ Backup</div>
+                  <div style="font-size:11px;color:var(--text2);margin-bottom:12px">เลือกไฟล์ที่ได้จากปุ่ม Backup (.xlsx หรือ .json) ระบบจะแสดงตัวอย่างก่อน ยังไม่เขียนอะไรจนกว่าจะกดยืนยัน และจะสำรองลง Drive ให้อัตโนมัติก่อนเริ่มกู้<br>🔒 ไม่แตะรายชื่อผู้ใช้และรหัสผ่าน</div>
+                  <input type="file" id="restore-file" accept=".xlsx,.json" onchange="restorePreview()" class="finput" style="max-width:420px">
+                  <div style="margin-top:10px;font-size:12px">
+                    <label style="display:block;margin-bottom:6px"><input type="radio" name="restore-mode" value="missing" checked onchange="restorePreview()"> <strong>เติมเฉพาะแถวที่หายไป</strong> (แนะนำ — ไม่แตะแถวที่มีอยู่แล้ว ใช้ได้ทุกแท็บ)</label>
+                    <label style="display:block"><input type="radio" name="restore-mode" value="replace" onchange="restorePreview()"> <strong>เขียนทับทั้งแท็บ</strong> (เฉพาะ Tenant / Unit / Rate Code — ใช้เมื่อข้อมูลเสียหาย)</label>
+                  </div>
+                  <div id="restore-preview" style="margin-top:14px;font-size:12px;line-height:1.8;overflow-x:auto"></div>
+                  <div id="restore-confirm" style="display:none;margin-top:12px">
+                    <div style="font-size:11px;color:var(--text2);margin-bottom:6px">พิมพ์ <strong>RESTORE</strong> เพื่อยืนยัน</div>
+                    <input class="finput" id="restore-ok" placeholder="RESTORE" style="max-width:160px" autocomplete="off">
+                    <button class="btn btn-r" id="restore-btn" onclick="restoreRun()">♻️ เริ่มกู้คืน</button>
+                  </div>
+                  <div id="restore-status" style="margin-top:12px;font-size:12px;line-height:1.8"></div>
                 </div>
                 <div class="settings-panel" id="s-monitoring">
                   <div style="font-size:13px;font-weight:700;margin-bottom:4px">📈 Monitoring Dashboard — เลือก Widget ที่จะแสดง</div>
@@ -4310,8 +4333,8 @@ async function saveRateCode(){const code=v('ar-code').trim();if(!code){toast('�
 function editUnit(i){const r=dbData.buildings[i];if(!r)return;document.getElementById('au-bld').value=r['Building Name']||'BTE';document.getElementById('au-floor').value=r['Floor']||'';document.getElementById('au-unit').value=r['Unit']||'';document.getElementById('au-type').value=r['Unit Type']||'Office';document.getElementById('au-sqm').value=r['SQM']||'';document.getElementById('au-common').value=r['Common Area']||'0';openMod('mod-add-unit');}
 async function saveUnit(){const unit=v('au-unit').trim();if(!unit){toast('⚠️ กรุณากรอก Unit');return;}const r={'Building Name':v('au-bld'),'Floor':v('au-floor'),'Unit':unit,'Unit Type':v('au-type'),'SQM':v('au-sqm'),'Common Area':v('au-common')};const idx=dbData.buildings.findIndex(x=>x['Unit']===unit&&x['Building Name']===r['Building Name']);if(idx>=0)dbData.buildings[idx]=r;else dbData.buildings.push(r);renderBldDB(dbData.buildings);if(USE_LIVE_API)await apiGET({action:'saveUnit',data:encodeURIComponent(JSON.stringify(r))});closeMod('mod-add-unit');toast('✅ บันทึก Unit');}
 
-function editTenantRow(i){const r=dbData.tenants[i];if(!r)return;const keys=Object.keys(r);const nk=keys.find(k=>k==='Name')||keys[1]||'Name';const ck=keys.find(k=>k==='Code')||keys[0]||'Code';document.getElementById('at-code').value=r[ck]||r['Tenant_code']||'';document.getElementById('at-bld').value=r['Building']||'BTE';document.getElementById('at-name').value=r[nk]||r['Name']||'';document.getElementById('at-space').value=r['Space']||'';document.getElementById('at-sqm').value=r['Area']||'';document.getElementById('at-level').value=r['Tenant_Level Charge']||'Normal';document.getElementById('at-agree').value=r['Agreement']||'';document.getElementById('at-status').value=r['Status']||'Current';openMod('mod-add-tenant');}
-async function saveTenant(){const name=v('at-name').trim();if(!name){toast('⚠️ กรุณากรอกชื่อ');return;}const r={'Code':v('at-code'),'Building':v('at-bld'),'Name':name,'Space':v('at-space'),'Area':v('at-sqm'),'Tenant_Level Charge':v('at-level'),'Agreement':v('at-agree'),'Status':v('at-status')};const idx=r['Code']?dbData.tenants.findIndex(x=>x['Code']===r['Code']):-1;if(idx>=0)dbData.tenants[idx]=r;else dbData.tenants.push(r);renderTenantDB(dbData.tenants);if(USE_LIVE_API)await apiGET({action:'saveTenant',data:encodeURIComponent(JSON.stringify(r))});closeMod('mod-add-tenant');toast('✅ บันทึก Tenant');}
+function editTenantRow(i){const r=dbData.tenants[i];if(!r)return;const keys=Object.keys(r);const nk=keys.find(k=>k==='Name')||keys[1]||'Name';const ck=keys.find(k=>k==='Code')||keys[0]||'Code';document.getElementById('at-code').value=r[ck]||r['Tenant_code']||'';document.getElementById('at-bld').value=r['Building']||'BTE';document.getElementById('at-name').value=r[nk]||r['Name']||'';document.getElementById('at-space').value=r['Space']||'';document.getElementById('at-sqm').value=r['Area']||'';document.getElementById('at-level').value=r['Tenant_Level Charge']||'Normal';document.getElementById('at-agree').value=r['Agreement']||'';document.getElementById('at-status').value=r['Status']||'Current';window._tnOrig={Code:r[ck]||r['Tenant_code']||'',Space:r['Space']||''};openMod('mod-add-tenant');}
+async function saveTenant(){const name=v('at-name').trim();if(!name){toast('⚠️ กรุณากรอกชื่อ');return;}const r={'Code':v('at-code'),'Building':v('at-bld'),'Name':name,'Space':v('at-space'),'Area':v('at-sqm'),'Tenant_Level Charge':v('at-level'),'Agreement':v('at-agree'),'Status':v('at-status')};const nz=x=>String(x==null?'':x).trim().toLowerCase();const o=window._tnOrig;let idx=-1;if(o)idx=dbData.tenants.findIndex(x=>nz(x['Code'])===nz(o.Code)&&nz(x['Space'])===nz(o.Space));if(idx<0&&r['Code'])idx=dbData.tenants.findIndex(x=>nz(x['Code'])===nz(r['Code'])&&nz(x['Space'])===nz(r['Space']));if(idx>=0)dbData.tenants[idx]=r;else dbData.tenants.push(r);renderTenantDB(dbData.tenants);const payload=Object.assign({},r);if(o)payload._orig=o;window._tnOrig=null;if(USE_LIVE_API)await apiGET({action:'saveTenant',data:encodeURIComponent(JSON.stringify(payload))});closeMod('mod-add-tenant');toast('✅ บันทึก Tenant');}
 
 // ============================================================
 // USER MANAGEMENT
@@ -4737,6 +4760,126 @@ function showLastBackup(){
   el.textContent=t?('Backup ล่าสุดจากเครื่องนี้: '+t):'ยังไม่เคย Backup จากเครื่องนี้';
 }
 document.addEventListener('DOMContentLoaded',showLastBackup);
+
+
+// ============================================================
+// v1.3.4 — Backup ลง Drive + Restore จากไฟล์ Backup (Admin)
+// ============================================================
+async function apiPOST(params){
+  if(!USE_LIVE_API) throw new Error('ยังไม่ได้เชื่อม API (Live)');
+  const r=await fetch(APPS_SCRIPT_URL,{method:'POST',body:new URLSearchParams(params),redirect:'follow'});
+  const d=await r.json();
+  if(!d.success) throw new Error(d.error||'API error');
+  return d;
+}
+async function backupToDriveNow(){
+  const st=document.getElementById('drive-bk-status'), b=document.getElementById('drive-bk-btn');
+  if(!USE_LIVE_API){ st.innerHTML='⚠️ ยังไม่ได้เชื่อม API (Live)'; return; }
+  b.disabled=true; st.innerHTML='⏳ กำลังสร้างสำเนาใน Drive...';
+  try{
+    const d=await apiPOST({action:'backupToDrive'});
+    st.innerHTML='✅ สำเร็จ: <a href="'+d.url+'" target="_blank" rel="noopener">'+d.name+'</a> (เก็บทั้งหมด '+d.kept+' ชุด)';
+  }catch(e){ st.innerHTML='❌ '+e.message+'<br><span style="color:var(--text2)">ถ้าเพิ่งอัปเดต Apps Script: ต้องรัน <code>setupNightlyBackup</code> ใน Editor 1 ครั้งเพื่ออนุญาต Drive แล้ว Deploy เวอร์ชันใหม่</span>'; }
+  b.disabled=false;
+}
+async function listDriveBackups(){
+  const st=document.getElementById('drive-bk-status');
+  st.innerHTML='⏳ กำลังโหลด...';
+  try{
+    const d=await apiPOST({action:'listBackups'});
+    const L=(d.backups||[]);
+    st.innerHTML=L.length?L.map(x=>'• <a href="'+x.url+'" target="_blank" rel="noopener">'+x.name+'</a> — '+x.created).join('<br>'):'ยังไม่มี Backup ในโฟลเดอร์';
+  }catch(e){ st.innerHTML='❌ '+e.message; }
+}
+
+const RESTORE_TABS={
+  'คำขอ OT (Tenant)':{k:'tenant',keys:['OT-AIR Work Request No.'],live:o=>o&&o.tenantReqs,ops:true},
+  'มอบหมาย (CLS)':{k:'building',keys:['OT-AIR Work Request No.'],live:o=>o&&o.buildingAssigns,ops:true},
+  'งาน Engineering':{k:'eng',keys:['OT-AIR Work Request No.'],live:o=>o&&o.engWork,ops:true},
+  'รายงาน CLS':{k:'cs',keys:['OT-AIR Work Request No.'],live:o=>o&&o.csReport,ops:true},
+  'Tenant':{k:'tenants',keys:['Code','Space'],live:m=>m&&m.tenants,replace:true},
+  'Unit':{k:'buildings',keys:['Building Name','Unit'],live:m=>m&&m.buildings,replace:true},
+  'Rate Code':{k:'rates',keys:['Code OT Air'],live:m=>m&&m.rates,replace:true},
+};
+let _restoreData=null;
+const _rnorm=v=>String(v==null?'':v).trim().toLowerCase();
+const _rkey=(r,keys)=>keys.map(k=>_rnorm(r[k])).join('|');
+function _readBackupFile(f){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    if(/\.json$/i.test(f.name)){
+      fr.onload=()=>{try{res(JSON.parse(fr.result));}catch(e){rej(new Error('อ่านไฟล์ JSON ไม่ได้'));}};
+      fr.onerror=()=>rej(new Error('อ่านไฟล์ไม่ได้')); fr.readAsText(f);
+    }else{
+      fr.onload=async()=>{
+        try{
+          const X=await _loadSheetJS(); const wb=X.read(fr.result,{type:'array'}); const out={};
+          wb.SheetNames.forEach(n=>{
+            out[n]=X.utils.sheet_to_json(wb.Sheets[n],{defval:''}).map(r=>{const o={};Object.keys(r).forEach(k=>o[k]=String(r[k]));return o;});
+          });
+          res(out);
+        }catch(e){rej(new Error('อ่านไฟล์ Excel ไม่ได้: '+e.message));}
+      };
+      fr.onerror=()=>rej(new Error('อ่านไฟล์ไม่ได้')); fr.readAsArrayBuffer(f);
+    }
+  });
+}
+function _restoreMode(){ const r=document.querySelector('input[name="restore-mode"]:checked'); return r?r.value:'missing'; }
+async function restorePreview(){
+  const fi=document.getElementById('restore-file'), pv=document.getElementById('restore-preview'), cf=document.getElementById('restore-confirm'), st=document.getElementById('restore-status');
+  st.innerHTML=''; cf.style.display='none'; _restoreData=null;
+  if(!fi.files||!fi.files[0]){ pv.innerHTML=''; return; }
+  if(!USE_LIVE_API){ pv.innerHTML='⚠️ ยังไม่ได้เชื่อม API (Live)'; return; }
+  pv.innerHTML='⏳ กำลังอ่านไฟล์และเทียบกับข้อมูลปัจจุบัน...';
+  try{
+    const file=await _readBackupFile(fi.files[0]);
+    const [m,o]=await Promise.all([apiGET({action:'readAll'}),apiGET({action:'readOps'})]);
+    if(!m||!o) throw new Error('ดึงข้อมูลปัจจุบันไม่สำเร็จ');
+    const mode=_restoreMode(); const plan=[]; let total=0;
+    Object.keys(RESTORE_TABS).forEach(tab=>{
+      const c=RESTORE_TABS[tab]; const rows=file[tab]; if(!Array.isArray(rows)||!rows.length) return;
+      if(rows.length===1&&!Object.keys(rows[0]).length) return;
+      if(mode==='replace'&&!c.replace) return;
+      const live=(c.ops?c.live(o):c.live(m))||[]; const liveKeys=new Set(live.map(r=>_rkey(r,c.keys)));
+      const valid=rows.filter(r=>c.keys.some(k=>_rnorm(r[k])));
+      const miss=valid.filter(r=>!liveKeys.has(_rkey(r,c.keys)));
+      const n=mode==='replace'?valid.length:miss.length; total+=n;
+      plan.push({tab,k:c.k,fileN:valid.length,liveN:live.length,n,rows:mode==='replace'?valid:miss});
+    });
+    if(!plan.length){ pv.innerHTML='⚠️ ไม่พบแท็บที่กู้คืนได้ในไฟล์นี้ (ต้องเป็นไฟล์จากปุ่ม Backup)'; return; }
+    _restoreData={plan,mode};
+    pv.innerHTML='<table class="tbl" style="width:auto"><thead><tr><th>แท็บ</th><th>ในไฟล์</th><th>ปัจจุบันใน Sheet</th><th>'+(mode==='replace'?'จะเขียนทับเป็น':'จะเติมกลับ')+'</th></tr></thead><tbody>'+
+      plan.map(p=>'<tr><td>'+p.tab+'</td><td>'+p.fileN+'</td><td>'+p.liveN+'</td><td><strong>'+p.n+'</strong> แถว</td></tr>').join('')+'</tbody></table>'+
+      (mode==='replace'?'<div style="margin-top:8px;color:#f85149">⚠️ โหมดเขียนทับ: ข้อมูลเดิมของแท็บที่ระบุจะถูกแทนที่ด้วยข้อมูลในไฟล์ (มีสำเนาใน Drive ให้ก่อนเสมอ)</div>':'')+
+      (total===0?'<div style="margin-top:8px">✅ ไม่มีแถวที่หายไป ข้อมูลปัจจุบันครบตามไฟล์แล้ว</div>':'');
+    if(total>0||mode==='replace') cf.style.display='block';
+  }catch(e){ pv.innerHTML='❌ '+e.message; }
+}
+async function restoreRun(){
+  const st=document.getElementById('restore-status'), btn=document.getElementById('restore-btn');
+  if(!_restoreData){ st.innerHTML='⚠️ เลือกไฟล์ก่อน'; return; }
+  if(document.getElementById('restore-ok').value.trim()!=='RESTORE'){ st.innerHTML='⚠️ พิมพ์ RESTORE ให้ถูกต้องก่อน'; return; }
+  btn.disabled=true; const {plan,mode}=_restoreData; const log=[];
+  try{
+    st.innerHTML='⏳ 1/2 สำรองสถานะปัจจุบันลง Drive...';
+    const bk=await apiPOST({action:'backupToDrive'});
+    log.push('☁️ สำรองก่อนกู้: '+bk.name);
+    for(const p of plan){
+      const CH=200; let added=0, skipped=0;
+      const list=p.rows;
+      for(let i=0;i<list.length;i+=CH){
+        st.innerHTML='⏳ 2/2 กำลังกู้ "'+p.tab+'" '+Math.min(i+CH,list.length)+'/'+list.length+'...<br>'+log.join('<br>');
+        const d=await apiPOST({action:'restoreChunk',sheet:p.k,mode:mode,first:i===0?'1':'0',data:JSON.stringify(list.slice(i,i+CH))});
+        added+=d.restored; skipped+=d.skipped;
+      }
+      log.push('✅ '+p.tab+': เขียน '+added+' แถว'+(skipped?(' · ข้าม '+skipped+' (มีอยู่แล้ว)'):''));
+    }
+    st.innerHTML='<strong>กู้คืนเสร็จสิ้น</strong><br>'+log.join('<br>')+'<br><span style="color:var(--text2)">กด 🔄 รีเฟรช/โหลดหน้าใหม่เพื่อดูข้อมูลล่าสุด</span>';
+    document.getElementById('restore-confirm').style.display='none'; document.getElementById('restore-ok').value='';
+    toast('♻️ กู้คืนเรียบร้อย');
+  }catch(e){ st.innerHTML='❌ หยุดกลางทาง: '+e.message+'<br>'+log.join('<br>')+'<br><span style="color:var(--text2)">มีสำเนาก่อนกู้ใน Drive (โฟลเดอร์ BBH_OT_Aircon_Backups) ย้อนกลับได้</span>'; }
+  btn.disabled=false;
+}
 
 async function apiGET(params){
   if(!USE_LIVE_API)return null;
