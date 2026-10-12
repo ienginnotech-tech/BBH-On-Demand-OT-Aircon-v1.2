@@ -1374,6 +1374,7 @@ body[data-theme="light"] .auth-divider{color:rgba(255,255,255,.5)}
                 <div class="settings-nav-item admin-only" onclick="switchSettings('s-building',this)">🏢 Building Config</div>
                 <div class="settings-nav-item admin-only" onclick="switchSettings('s-holidays',this)">📅 Public Holidays</div>
                 <div class="settings-nav-item admin-only" onclick="switchSettings('s-monitoring',this)">📈 Monitoring Dashboard</div>
+                <div class="settings-nav-item admin-only" onclick="switchSettings('s-backup',this)">💾 Backup ข้อมูล</div>
               </div>
               <div>
                 <!-- THEME -->
@@ -1531,6 +1532,17 @@ body[data-theme="light"] .auth-divider{color:rgba(255,255,255,.5)}
                 </div>
 
                 <!-- MONITORING DASHBOARD WIDGET TOGGLES -->
+                <div class="settings-panel" id="s-backup">
+                  <div style="font-size:13px;font-weight:700;margin-bottom:4px">💾 Backup ข้อมูลทั้งหมด</div>
+                  <div style="font-size:11px;color:var(--text2);margin-bottom:16px">ดึงข้อมูลสดจาก Google Sheet ทุกแท็บ แล้วดาวน์โหลดเป็นไฟล์ Excel (.xlsx) 1 ไฟล์ — ไม่ต้องเปิด Google Sheet</div>
+                  <div style="font-size:12px;line-height:1.9;margin-bottom:14px">
+                    ไฟล์จะมีแท็บ: <strong>คำขอ OT (Tenant)</strong> · <strong>มอบหมาย (CLS)</strong> · <strong>งาน Engineering</strong> · <strong>รายงาน CLS</strong> · <strong>Tenant</strong> · <strong>Unit</strong> · <strong>Rate Code</strong> · <strong>ช่าง / ประเภท / Level</strong> · <strong>ผู้ใช้</strong> · <strong>วันหยุด</strong><br>
+                    <span style="color:var(--text2)">🔒 ไม่รวมรหัสผ่านใดๆ ในไฟล์ backup</span>
+                  </div>
+                  <button class="btn btn-p" id="backup-btn" onclick="backupAllData()">⬇ Backup ข้อมูลทั้งหมด (Excel)</button>
+                  <div id="backup-status" style="margin-top:14px;font-size:12px;line-height:1.8"></div>
+                  <div id="backup-last" style="margin-top:6px;font-size:11px;color:var(--text2)"></div>
+                </div>
                 <div class="settings-panel" id="s-monitoring">
                   <div style="font-size:13px;font-weight:700;margin-bottom:4px">📈 Monitoring Dashboard — เลือก Widget ที่จะแสดง</div>
                   <div style="font-size:11px;color:var(--text3);margin-bottom:16px">กำหนดว่าจะเปิดแสดงหัวข้อไหนบ้างในหน้า Monitoring (Admin เท่านั้นที่เห็นหน้านี้และปรับได้)</div>
@@ -4651,6 +4663,80 @@ function loadApiUrl(){
   const el2=document.getElementById('api-url-quick');
   if(el2&&saved)el2.value=saved;
 }
+
+
+// ============================================================
+// BACKUP ทั้งหมด → Excel (.xlsx) (Admin)
+// ============================================================
+function _loadSheetJS(){
+  return new Promise((res,rej)=>{
+    if(window.XLSX) return res(window.XLSX);
+    const sc=document.createElement('script');
+    sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload=()=>res(window.XLSX); sc.onerror=()=>rej(new Error('โหลดตัวสร้างไฟล์ Excel ไม่ได้'));
+    document.head.appendChild(sc);
+  });
+}
+function _bkClean(rows){
+  // ตัดคอลัมน์รหัสผ่านออก
+  return (rows||[]).map(r=>{
+    if(r&&typeof r==='object'&&!Array.isArray(r)){
+      const o={}; Object.keys(r).forEach(k=>{ if(!/pass|pwd|รหัส/i.test(k)) o[k]=r[k]; }); return o;
+    }
+    return {Value:r};
+  });
+}
+async function backupAllData(){
+  const btn=document.getElementById('backup-btn'), st=document.getElementById('backup-status');
+  if(!USE_LIVE_API){ st.innerHTML='⚠️ ยังไม่ได้เชื่อม API (Live) — ตั้งค่าที่ปุ่ม API ก่อน'; return; }
+  btn.disabled=true; st.innerHTML='⏳ กำลังดึงข้อมูลจาก Google Sheet...';
+  try{
+    const [master,ops,hol,usr]=await Promise.all([
+      apiGET({action:'readAll'}), apiGET({action:'readOps'}),
+      apiGET({action:'getHolidays'}), apiGET({action:'getUsers'}),
+    ]);
+    if(!master||!ops){ throw new Error('ดึงข้อมูลไม่สำเร็จ — ตรวจสอบการเชื่อม API แล้วลองใหม่'); }
+    const holRows=[]; const hh=(hol&&hol.holidays)||{};
+    Object.keys(hh).forEach(b=>(hh[b]||[]).forEach(h=>holRows.push({Building:b,Date:h.date,Name:h.name||''})));
+    const sheets=[
+      ['คำขอ OT (Tenant)',ops.tenantReqs],['มอบหมาย (CLS)',ops.buildingAssigns],
+      ['งาน Engineering',ops.engWork],['รายงาน CLS',ops.csReport],
+      ['Tenant',master.tenants],['Unit',master.buildings],['Rate Code',master.rates],
+      ['ช่าง',master.staff],['ประเภท OT',master.types],['Level',master.levels],
+      ['ผู้ใช้',usr&&usr.users],['วันหยุด',holRows],
+    ];
+    const lines=[]; const stamp=new Date(); const pad=n=>String(n).padStart(2,'0');
+    const fname='BBH_OT_Backup_'+stamp.getFullYear()+pad(stamp.getMonth()+1)+pad(stamp.getDate())+'_'+pad(stamp.getHours())+pad(stamp.getMinutes());
+    let done=false;
+    try{
+      const X=await _loadSheetJS(); const wb=X.utils.book_new();
+      sheets.forEach(([name,rows])=>{
+        const data=_bkClean(rows); lines.push(name+': '+data.length+' แถว');
+        const ws=X.utils.json_to_sheet(data.length?data:[{}]);
+        X.utils.book_append_sheet(wb,ws,name.slice(0,31));
+      });
+      X.writeFile(wb,fname+'.xlsx'); done=true;
+    }catch(e){
+      // สำรอง: ถ้าสร้าง Excel ไม่ได้ ให้ดาวน์โหลดเป็น JSON
+      const obj={}; sheets.forEach(([n,r])=>{obj[n]=_bkClean(r);lines.push(n+': '+obj[n].length+' แถว');});
+      const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(obj,null,1));
+      a.download=fname+'.json'; a.click(); done=true;
+      st.innerHTML='⚠️ สร้างไฟล์ Excel ไม่ได้ (ไม่มีอินเทอร์เน็ตภายนอก) — ดาวน์โหลดเป็น .json แทน<br>';
+    }
+    if(done){
+      st.innerHTML=(st.innerHTML.startsWith('⚠️')?st.innerHTML:'')+'✅ Backup เรียบร้อย: <strong>'+fname+'</strong><br>'+lines.join(' · ');
+      try{ localStorage.setItem('dbh_last_backup', stamp.toLocaleString('th-TH')); }catch(e){}
+      showLastBackup(); toast('💾 Backup เรียบร้อย');
+    }
+  }catch(e){ st.innerHTML='❌ '+e.message; }
+  btn.disabled=false;
+}
+function showLastBackup(){
+  const el=document.getElementById('backup-last'); if(!el) return;
+  let t=''; try{ t=localStorage.getItem('dbh_last_backup')||''; }catch(e){}
+  el.textContent=t?('Backup ล่าสุดจากเครื่องนี้: '+t):'ยังไม่เคย Backup จากเครื่องนี้';
+}
+document.addEventListener('DOMContentLoaded',showLastBackup);
 
 async function apiGET(params){
   if(!USE_LIVE_API)return null;
